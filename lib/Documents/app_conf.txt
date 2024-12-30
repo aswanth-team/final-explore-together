@@ -1,0 +1,4 @@
+image : - cloudinary
+notification - oneSignal
+backend - firebase use to store details(no sql)
+frondend - flutter
