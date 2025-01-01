@@ -11,12 +11,12 @@ import '../../../utils/counder.dart';
 import '../../../utils/floating_button.dart';
 import '../../../utils/image_swipe.dart';
 import '../../../utils/loading.dart';
+import '../aiChat/ai_chat_screen.dart';
 import '../commentScreen/comment_screen.dart';
 import '../profileScreen/post&trip/post_detail_screen.dart';
 import '../uploadScreen/upload_bottom_sheet.dart';
 import '../userDetailsScreen/others_user_profile.dart';
 import '../userDetailsScreen/post&trip/post&trip/other_user_post_detail_screen.dart';
-import '../aiChat/ai_chat_popup.dart';
 import '../user_screen.dart';
 import 'notification_sceen.dart';
 
@@ -629,17 +629,24 @@ class HomePageState extends State<HomePage> {
                                     MaterialPageRoute(
                                         builder: (context) =>
                                             CurrentUserPostDetailScreen(
-                                                postId: postId,
-                                                userId: userId)),
+                                              postId: postId,
+                                              userId: userId,
+                                              commentCount:
+                                                  commentCounts[postId] ?? 0,
+                                            )),
                                   );
                                 } else {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) =>
-                                            OtherUserPostDetailScreen(
-                                                postId: postId,
-                                                userId: userId)),
+                                      builder: (context) =>
+                                          OtherUserPostDetailScreen(
+                                        postId: postId,
+                                        userId: userId,
+                                        commentCount:
+                                            commentCounts[postId] ?? 0,
+                                      ),
+                                    ),
                                   );
                                 }
                               },
@@ -840,9 +847,14 @@ class HomePageState extends State<HomePage> {
                     child: FloatingChatButton(
                       heroTag: 'Home_AI_Chat',
                       onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => const ChatPopup(),
+                        //showDialog(
+                        //    context: context,
+                        //    builder: (_) => const ChatPopup(),
+                        //   );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const AiChatPage()),
                         );
                       },
                       imageIcon: const AssetImage(

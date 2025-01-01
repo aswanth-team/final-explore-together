@@ -23,8 +23,7 @@ class UserPostServices {
       throw Exception('Post not found');
     }
   }
-
-  //used for fetch post of perticular user
+  
   Future<List<Map<String, dynamic>>> fetchUserPosts(
       {required String userId}) async {
     try {

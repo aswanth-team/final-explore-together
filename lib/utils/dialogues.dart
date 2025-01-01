@@ -97,7 +97,6 @@ Future<void> showConfirmationDialog({
   );
 }
 
-
 /*showConfirmationDialog(
   context: context,
   title: 'Delete Image',
@@ -116,3 +115,50 @@ Future<void> showConfirmationDialog({
   subMessage: 'This action cannot be undone.', // Custom sub message
 );
  */
+
+Future<void> showPlaceDialog({
+  required BuildContext context,
+  required String placeName,
+}) {
+  return showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(
+                      Icons.close,
+                      size: 24,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              placeName,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}

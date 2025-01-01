@@ -3,19 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'dart:developer';
-
 import '../../../utils/loading.dart';
 
-const apiKey = 'AIzaSyAwjcN3Aei78CJ6YP2Ok-W47i-Z_5k_5EE';
-
-class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+class AiChatPage extends StatefulWidget {
+  const AiChatPage({super.key});
 
   @override
-  ChatPageState createState() => ChatPageState();
+  AiChatPageState createState() => AiChatPageState();
 }
 
-class ChatPageState extends State<ChatPage> {
+class AiChatPageState extends State<AiChatPage> {
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, String>> _chatHistory = [];
   bool _isLoading = false;
@@ -29,6 +26,8 @@ class ChatPageState extends State<ChatPage> {
   String? userEmail;
   String? userBio;
   String? instruction;
+  final List<String> _userInputHistory = [];
+  List<Map<String, dynamic>>? usersPosts;
 
   @override
   void initState() {
@@ -37,89 +36,115 @@ class ChatPageState extends State<ChatPage> {
   }
 
   void _systemPromptMaker() {
-    setState(() {
-      instruction = '''
-      instruction = [
-      {
-        "system_instruction": "You are Explore AI, an intelligent assistant for the Explore Together application. Your primary role is to assist users who interact with this app. The application's main goal is to connect solo travelers with groups. In the user_details, where i provide the details of current chating user. So mention the username or user full name in response. Provide simple and clear responses to 'user_input'. Now i am explaining the app usage in detail. In this app in the Home Page user Can see the Posts of All users (current user can also uplaod post based on their interest), when in the post there if the current user is arracted then the user can chat with that user. in that case of post there many user will chat with that post uploaded user. at that time in the app there is option of creating chat group and disscuss about there plan. And make trip. Also in this App that provide many trip packages. user can also considerr that in their trip. In my App  then main Feature is the user can follow another user and make their budddy.",
-        "user_details": {
-            "User Name : $userName",
-            "User Fullname : $fullName",
-            "User Age : $userAge",
-            "User Location : $userLocation",
-            "User Date of Birth : $userDOB",
-            "User Email : $userEmail",
-            "User Bio : $userBio"
-        },
-        "application_details": {
-          "features": [
-            "Find Travel Buddies: Match with users heading to similar destinations.",
-            "Chat Feature: Communicate with travel companions in-app."
-          ]
-        },
-        "navigation_instructions": [
-          {
-            "feature": "Find Travel Buddies",
-            "steps": [
-              "Open the app.",
-              "Search for your desired location in the Home section.",
-              "Browse potential matches and start chatting."
-            ]
-          },
-          {
-            "feature": "Edit Profile",
-            "steps": [
-              "Go to your profile.",
-              "Tap 'Edit Profile' or navigate to 'Settings > Account Management > Edit Profile'."
-            ]
-          },
-          {
-            "feature": "Change Password",
-            "steps": [
-              "Go to your profile.",
-              "Navigate to 'Settings > Account Management > Change Password'."
-            ]
-          }
-        ]
-      }
-      ]
-      ''';
-    });
-    print(instruction);
+    if (mounted) {
+      setState(() {
+        instruction = '''
+      instruction = [ { "system_instruction": "You are Explore AI, an intelligent assistant for the Explore Together application. Your primary role is to assist users who interact with this app. The application's main goal is to connect solo travelers with groups. In the user_details, where i provide the details of current chating user. So mention the username or user full name in some responses, only on important. In there i also provide the user previous inputs also , so consider that if usefull. Provide simple and clear responses to 'user_input'. Now i am explaining the app usage in detail. In this app in the Home Page user Can see the Posts of All users (current user can also uplaod post based on their interest), when in the post there if the current user is arracted then the user can chat with that user. in that case of post there many user will chat with that post uploaded user. at that time in the app there is option of creating chat group and disscuss about there plan. And make trip. Also in this App that provide many trip packages. user can also considerr that in their trip. In my App  then main Feature is the user can follow another user and make their budddy. In the 'all_users_post' i will provide the all posts uploaded by the user, where have triplocation, planToVisitPlacesInTrip, and post uplaoded user Details (username and location).if th user ask about any user that in the all_users_post, give the details with one or 2 posts details of that user. if the user ask about the trip location, 'anything like i want to got to trip' in the time you must ask interest and suguust tge loaction from the post triplocation and planToVisitPlacesInTrip . In there i provide the tripCompleted , that is the posted user complete that trip or not. if completed, then not consider that in the finding place to user. beacuse that is alrready completed.",  "user_details": {'username' : '$userName', 'fullname' : '$fullName','age' : '$userAge', 'location':'$userLocation','dateOfBirth':'$userDOB', 'userBio':'$userBio'}, "user_previous_inputs" : $_userInputHistory, "all_users_post" : $usersPosts,
+    "navigation_in_app": {"Find Travel Buddies" : "Search for your desired location in the Home section > Browse potential matches and start chatting and Create Group", "Edit Profile" : "Go to your profile > Tap Edit Profile or navigate to Settings > Account Management > Edit Profile" , "Go to your profile > Navigate to Settings > Account Management > Change Password"}]''';
+      });
+    }
   }
 
   Future<void> _fetchUserData() async {
     try {
-      setState(() {
-        _isLoading = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
       final userDoc = await FirebaseFirestore.instance
           .collection('user')
           .doc(currentUserId)
           .get();
 
       if (userDoc.exists) {
-        setState(() {
-          _currentUserDetails = userDoc.data();
-          userAge = _currentUserDetails != null
-              ? _calculateAge(_currentUserDetails!['dob'])
-              : null;
-          userName = _currentUserDetails?['username'];
-          fullName = _currentUserDetails?['fullname'];
-          userDOB = _currentUserDetails?['dob'];
-          userLocation = _currentUserDetails?['location'];
-          userEmail = _currentUserDetails?['email'];
-          userBio = _currentUserDetails?['userbio'];
-        });
+        if (mounted) {
+          setState(() {
+            _currentUserDetails = userDoc.data();
+            userAge = _currentUserDetails != null
+                ? _calculateAge(_currentUserDetails!['dob'])
+                : null;
+            userName = _currentUserDetails?['username'];
+            fullName = _currentUserDetails?['fullname'];
+            userDOB = _currentUserDetails?['dob'];
+            userLocation = _currentUserDetails?['location'];
+            userBio = _currentUserDetails?['userbio'];
+          });
+        }
       }
     } catch (e) {
       log('Error fetching user data: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+    _fetchPostData();
     _systemPromptMaker();
+  }
+
+  Future<void> _fetchPostData() async {
+    try {
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      final postSnapshot = await FirebaseFirestore.instance
+          .collection('post')
+          .where('userid', isNotEqualTo: currentUserId)
+          .get();
+
+      if (postSnapshot.docs.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      List<Map<String, dynamic>> fetchedPosts = [];
+      for (var doc in postSnapshot.docs) {
+        final userId = doc['userid'];
+
+        final userSnapshot = await FirebaseFirestore.instance
+            .collection('user')
+            .doc(userId)
+            .get();
+
+        String userDetails = 'Unknown User';
+        if (userSnapshot.exists) {
+          final userData = userSnapshot.data();
+          userDetails =
+              '"username": "${userData?['username'] ?? 'Unknown'}","fullname":"${userData?['fullname'] ?? 'Unknown'}",location":"${userData?['location'] ?? 'Unknown'}"';
+        }
+        //'postedUserId': userId,
+        fetchedPosts.add({
+          'triplocation': doc['locationName'],
+          'planToVisitPlacesInTrip': doc['planToVisitPlaces'],
+          'tripCompleted': doc['tripCompleted'],
+          'postedUserDetails': userDetails,
+        });
+      }
+      if (mounted) {
+        setState(() {
+          usersPosts = fetchedPosts;
+          _isLoading = false;
+        });
+      }
+
+      _systemPromptMaker();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   int _calculateAge(String dob) {
@@ -137,15 +162,20 @@ class ChatPageState extends State<ChatPage> {
   void _sendMessage(String userMessage) async {
     if (userMessage.trim().isEmpty) return;
 
+    _userInputHistory.add(userMessage);
+    if (_userInputHistory.length > 5) {
+      _userInputHistory.removeAt(0);
+    }
+
     setState(() {
       _chatHistory.add({'role': 'user', 'message': userMessage});
       _isLoading = true;
     });
 
-    String modifiedUserInput = '''
-$instruction,
-"user_input": "$userMessage"
-''';
+    _systemPromptMaker();
+
+    String modifiedUserInput =
+        '''$instruction,  "user_input": "$userMessage"''';
 
     try {
       final gemini = Gemini.instance;
@@ -162,35 +192,37 @@ $instruction,
           role: 'user',
         ),
       ];
-
-      // Call the Gemini API
       final response = await gemini.chat(conversation);
-
-      // Add the model's response to the chat history
-      setState(() {
-        _chatHistory.add({
-          'role': 'model',
-          'message': response?.output ?? 'No response received',
+      if (mounted) {
+        setState(() {
+          _chatHistory.add({
+            'role': 'model',
+            'message': response?.output ?? 'No response received',
+          });
         });
-      });
+      }
     } catch (e) {
-      // Log error for debugging
       log('Error in chat: $e');
-
-      setState(() {
-        _chatHistory.add({
-          'role': 'error',
-          'message': 'An error occurred. Please try again.',
+      if (mounted) {
+        setState(() {
+          _chatHistory.add({
+            'role': 'error',
+            'message':
+                'Response not loading. Please try again or check your internet connection.',
+          });
         });
-      });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  Widget _buildMessageBubble(String message, String role) {
+  Widget _buildMessageBubble(String message, String role,
+      {bool isLoading = false}) {
     bool isUser = role == 'user';
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -213,24 +245,29 @@ $instruction,
             ),
           ],
         ),
-        child: Text(
-          message,
-          style: TextStyle(
-            fontSize: 16.0,
-            color: isUser ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.w400,
-            height: 1.4,
-          ),
-        ),
+        child: isLoading
+            ? const LoadingAnimation()
+            : Text(
+                message,
+                style: TextStyle(
+                  fontSize: 16.0,
+                  color: isUser ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w400,
+                  height: 1.4,
+                ),
+              ),
       ),
     );
   }
 
   Widget _buildChatList() {
     return ListView.builder(
-      itemCount: _chatHistory.length,
+      itemCount: _chatHistory.length + (_isLoading ? 1 : 0),
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       itemBuilder: (context, index) {
+        if (index == _chatHistory.length && _isLoading) {
+          return _buildMessageBubble('', 'model', isLoading: true);
+        }
         final message = _chatHistory[index];
         return _buildMessageBubble(message['message']!, message['role']!);
       },
@@ -276,10 +313,6 @@ $instruction,
                     )
                   : _buildChatList(),
             ),
-            if (_isLoading)
-              const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0),
-                  child: LoadingAnimation()),
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(8.0),

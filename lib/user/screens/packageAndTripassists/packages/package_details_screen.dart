@@ -1,10 +1,9 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../utils/confirm_dialogue.dart';
+import '../../../../utils/dialogues.dart';
 import '../../../../utils/counder.dart';
 import '../../../../utils/image_swipe.dart';
 import '../../../../utils/loading.dart';
@@ -48,35 +47,31 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
 
     final packageData = packageDoc.data()!;
 
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('post')
-        .where('userid', isEqualTo: currentUserId)
-        .where('locationName', isEqualTo: packageData['locationName'])
-        .get();
+    if (packageData['postedUsers'] == null) {
+      if (mounted) {
+        setState(() {
+          _hasPosted = false;
+        });
+      }
+    } else {
+      final isPosted = packageData['postedUsers'] != null &&
+          packageData['postedUsers'].containsKey(currentUserId);
 
-    final isPosted = querySnapshot.docs.any((doc) {
-      final postData = doc.data();
-      return postData['locationDescription'] ==
-              packageData['locationDescription'] &&
-          postData['planToVisitPlaces'].toString() ==
-              packageData['planToVisitPlaces'].toString() &&
-          postData['locationImages'].toString() ==
-              packageData['locationImages'].toString() &&
-          postData['tripDuration'] == packageData['tripDuration'];
-    });
-
-    if (mounted) {
-      setState(() {
-        _hasPosted = isPosted;
-      });
+      if (mounted) {
+        setState(() {
+          _hasPosted = isPosted;
+        });
+      }
     }
   }
 
   void _showPostConfirmationDialog(Map<String, dynamic> packageData) {
     showConfirmationDialog(
       context: context,
-      title: 'Post',
-      message: 'Would you like to post this package?',
+      title: _hasPosted ? 'Post Again' : 'Post',
+      message: _hasPosted
+          ? 'Would you like to post this package Again?'
+          : 'Would you like to post this package?',
       cancelButtonText: 'Cancel',
       confirmButtonText: 'Post',
       onConfirm: () {
@@ -116,8 +111,22 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
         'uploadedDateTime': FieldValue.serverTimestamp(),
         'likes': null,
         'tripCompletedDuration': null,
+        'postedFrom': widget.documentId,
       };
-      await FirebaseFirestore.instance.collection('post').add(postData);
+
+      DocumentReference docRef =
+          await FirebaseFirestore.instance.collection('post').add(postData);
+
+      final uploadedByData = {
+        'postDocId': docRef.id,
+      };
+
+      await FirebaseFirestore.instance
+          .collection('packages')
+          .doc(widget.documentId)
+          .update({
+        'postedUsers.$currentUserId': FieldValue.arrayUnion([uploadedByData]),
+      });
 
       if (mounted) {
         Navigator.pop(context);
@@ -135,50 +144,6 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
     }
   }
 
-  void _showPlaceDialog(String placeName) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(
-                        Icons.close,
-                        size: 24,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                placeName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _launchPhoneDialer(String phoneNumber) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
     if (await canLaunchUrl(phoneUri)) {
@@ -193,30 +158,6 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Package Details..'),
-        actions: [
-          if (!_hasPosted)
-            FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection('packages')
-                  .doc(widget.documentId)
-                  .get(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const SizedBox.shrink();
-                }
-
-                final packageData =
-                    snapshot.data!.data() as Map<String, dynamic>;
-
-                return IconButton(
-                  icon: const Icon(Icons.post_add),
-                  onPressed: () {
-                    _showPostConfirmationDialog(packageData);
-                  },
-                );
-              },
-            ),
-        ],
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
@@ -277,12 +218,26 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
                           ),
                           const SizedBox(height: 16),
                           _hasPosted
-                              ? const Text(
-                                  'Already Posted',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                              ? ElevatedButton(
+                                  onPressed: () {
+                                    _showPostConfirmationDialog(packageData);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    foregroundColor: Colors.white,
+                                    elevation: 5,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 15),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Post Again',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 )
                               : ElevatedButton(
@@ -337,7 +292,8 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
 
                             return GestureDetector(
                               onTap: () {
-                                _showPlaceDialog(placeName);
+                                showPlaceDialog(
+                                    context: context, placeName: placeName);
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),

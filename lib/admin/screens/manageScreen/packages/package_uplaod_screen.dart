@@ -117,7 +117,7 @@ class PackageUploaderState extends State<PackageUploader> {
         'uploadedDateTime': FieldValue.serverTimestamp(),
         'contact': _phoneNumber,
         'prize': _prize,
-        'postUploadedUsers': null
+        'postedUsers': null
       };
       await FirebaseFirestore.instance.collection('packages').add(packageData);
 

@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../utils/loading.dart';
 
-
 class TravelAgencyPage extends StatefulWidget {
   const TravelAgencyPage({super.key});
 
@@ -34,6 +33,8 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
       final agenciesList = snapshot.docs.map((doc) {
         return doc.data();
       }).toList();
+
+      agenciesList.shuffle();
 
       if (mounted) {
         setState(() {

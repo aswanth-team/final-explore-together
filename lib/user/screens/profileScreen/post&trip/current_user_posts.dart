@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../services/post/firebase_post.dart';
-import '../../../../utils/confirm_dialogue.dart';
+import '../../../../utils/dialogues.dart';
 import '../../../../utils/loading.dart';
 import 'post_complete_screen.dart';
 import 'post_detail_screen.dart';

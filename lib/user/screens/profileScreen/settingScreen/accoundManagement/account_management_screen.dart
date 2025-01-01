@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../../../services/user/firebase_user_auth.dart';
-import '../../../../../utils/confirm_dialogue.dart';
+import '../../../../../utils/dialogues.dart';
 import '../../edit_profile_screen.dart';
 
 class AccountManagementPage extends StatelessWidget {

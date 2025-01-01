@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../services/cloudinary_upload.dart';
-import '../../../../utils/confirm_dialogue.dart';
+import '../../../../utils/dialogues.dart';
 import '../../../../utils/floating_button.dart';
 import '../../../../utils/loading.dart';
 

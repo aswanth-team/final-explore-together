@@ -122,6 +122,7 @@ class PostUploaderState extends State<PostUploader> {
         'uploadedDateTime': FieldValue.serverTimestamp(),
         'likes': null,
         'tripCompletedDuration': null,
+        'postedFrom': null,
       };
       await FirebaseFirestore.instance.collection('post').add(postData);
 
@@ -313,6 +314,7 @@ class PostUploaderState extends State<PostUploader> {
                             color: Colors.black54,
                           ),
                         ),
+                        maxLines: 5,
                         validator: (value) => value == null || value.isEmpty
                             ? 'Enter location description'
                             : null,
@@ -385,50 +387,33 @@ class PostUploaderState extends State<PostUploader> {
                     ),
                     const SizedBox(height: 8),
                     if (_tags.isNotEmpty)
-                      Wrap(
-                        spacing: 8.0,
-                        children: _tags.map((tag) {
-                          return Chip(
-                            label: Text(tag),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            backgroundColor: Colors.grey[200],
-                            labelStyle: const TextStyle(color: Colors.black),
-                            onDeleted: () => _removeTag(tag),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _isPosting
-                          ? null
-                          : () {
-                              if (_formKey.currentState!.validate()) {
-                                _formKey.currentState!.save();
-                                _post();
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 15, horizontal: 30),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                      Container(
+                        height: 200,
+                        width: 350,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        elevation: 5,
-                        shadowColor: Colors.black.withValues(alpha: 0.25),
-                      ),
-                      child: const Text(
-                        'Post',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        padding: EdgeInsets.all(4),
+                        child: SingleChildScrollView(
+                          child: Wrap(
+                            spacing: 8.0,
+                            children: _tags.map((tag) {
+                              return Chip(
+                                label: Text(tag),
+                                deleteIcon: const Icon(Icons.close, size: 18),
+                                backgroundColor: Colors.grey[200],
+                                labelStyle:
+                                    const TextStyle(color: Colors.black),
+                                onDeleted: () => _removeTag(tag),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
-                    )
                   ],
                 ),
               ),
@@ -437,6 +422,32 @@ class PostUploaderState extends State<PostUploader> {
           if (_isPosting) const LoadingAnimationOverLay()
         ],
       ),
+      floatingActionButton: Container(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: FloatingActionButton.extended(
+          heroTag: 'Post_Button',
+          onPressed: _isPosting
+              ? null
+              : () {
+                  if (_formKey.currentState!.validate()) {
+                    _formKey.currentState!.save();
+                    _post();
+                  }
+                },
+          backgroundColor: Colors.blue,
+          elevation: 5,
+          label: const Text(
+            'Post',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          icon: const Icon(Icons.post_add, color: Colors.white),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

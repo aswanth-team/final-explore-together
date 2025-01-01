@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
+//import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'admin/screens/admin_screen.dart';
 import 'firebase_options.dart';
@@ -13,9 +13,10 @@ import 'user/screens/user_screen.dart';
 const apiKey = 'AIzaSyAwjcN3Aei78CJ6YP2Ok-W47i-Z_5k_5EE';
 
 Future<void> main() async {
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
+  //WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
 
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  //FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // Initialize Firebase
   await Firebase.initializeApp(
@@ -54,7 +55,7 @@ Future<void> main() async {
     home = const LoginScreen();
   }
 
-  FlutterNativeSplash.remove();
+  //FlutterNativeSplash.remove();
 
   runApp(MaterialApp(
     home: home,

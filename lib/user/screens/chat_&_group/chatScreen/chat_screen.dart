@@ -339,7 +339,7 @@ class ChatHomeScreenState extends State<ChatHomeScreen>
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ChatPage()),
+            MaterialPageRoute(builder: (context) => const AiChatPage()),
           );
         },
         imageIcon: const AssetImage("assets/system/iconImage/aiIcon.png"),

@@ -9,7 +9,7 @@ import '../../../../user/screens/BuddyScreen/buddying_screen.dart';
 import '../../../../user/screens/profileScreen/post&trip/current_user_tripimage.dart';
 import '../../../../utils/app_colors.dart';
 import '../../../../utils/counder.dart';
-import '../../../../utils/confirm_dialogue.dart';
+import '../../../../utils/dialogues.dart';
 import '../../../../utils/loading.dart';
 import '../../messageScreen/sent_message_screen.dart';
 import 'adminViewPost&trip/user_posts.dart';

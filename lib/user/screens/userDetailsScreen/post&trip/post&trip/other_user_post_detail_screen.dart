@@ -17,12 +17,13 @@ import '../../others_user_profile.dart';
 class OtherUserPostDetailScreen extends StatefulWidget {
   final String postId;
   final String userId;
+  final int commentCount;
 
-  const OtherUserPostDetailScreen({
-    super.key,
-    required this.postId,
-    required this.userId,
-  });
+  const OtherUserPostDetailScreen(
+      {super.key,
+      required this.postId,
+      required this.userId,
+      this.commentCount = -1});
 
   @override
   State<OtherUserPostDetailScreen> createState() =>
@@ -252,6 +253,15 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                               ),
                               onPressed: () => _showCommentSheet(context),
                             ),
+                            if (widget.commentCount != -1)
+                              Text(
+                                formatCount(widget.commentCount),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
                           ],
                         ),
                         const SizedBox(height: 16.0),

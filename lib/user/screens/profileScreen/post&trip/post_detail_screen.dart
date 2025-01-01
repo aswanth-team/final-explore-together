@@ -6,7 +6,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../../../../services/post/firebase_post.dart';
 import '../../../../services/user/user_services.dart';
 import '../../../../utils/app_colors.dart';
-import '../../../../utils/confirm_dialogue.dart';
+import '../../../../utils/dialogues.dart';
 import '../../../../utils/counder.dart';
 import '../../../../utils/loading.dart';
 import '../../commentScreen/comment_screen.dart';
@@ -18,11 +18,13 @@ import '../../../../utils/image_swipe.dart';
 class CurrentUserPostDetailScreen extends StatefulWidget {
   final String postId;
   final String userId;
+  final int commentCount;
 
   const CurrentUserPostDetailScreen({
     super.key,
     required this.postId,
     required this.userId,
+    this.commentCount = -1,
   });
 
   @override
@@ -212,6 +214,15 @@ class _CurrentUserPostDetailScreenState
                           ),
                           onPressed: () => _showCommentSheet(context),
                         ),
+                        if (widget.commentCount != -1)
+                          Text(
+                            formatCount(widget.commentCount),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
                       ],
                     ),
                     const SizedBox(height: 16.0),

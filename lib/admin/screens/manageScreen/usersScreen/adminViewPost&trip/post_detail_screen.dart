@@ -7,7 +7,7 @@ import '../../../../../services/user/user_services.dart';
 import '../../../../../utils/app_colors.dart';
 import '../../../../../utils/image_swipe.dart';
 import '../../../../../user/screens/userDetailsScreen/others_user_profile.dart';
-import '../../../../../utils/confirm_dialogue.dart';
+import '../../../../../utils/dialogues.dart';
 import '../../../../../utils/counder.dart';
 import '../../../../../utils/loading.dart';
 import 'admin_comment_view_screen.dart';

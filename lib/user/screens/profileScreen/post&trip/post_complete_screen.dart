@@ -1,6 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../../../utils/dialogues.dart';
 
 class PostCompleteScreen extends StatefulWidget {
   final String postId;
@@ -18,17 +21,69 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
   final TextEditingController tripBuddiesController = TextEditingController();
   final TextEditingController visitedPlacesController = TextEditingController();
   final TextEditingController tripDurationController = TextEditingController();
+  final TextEditingController commentController = TextEditingController();
 
+  final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   final List<String> tripBuddies = [];
   final Map<String, Map<String, String>> userDetails = {};
   final List<String> visitedPlaces = [];
   String? tripFeedback;
   double? tripRating;
   int? tripCompletedDuration;
+  String? comment;
+  bool isFromPackage = false;
+  String? packageId;
 
   bool visitedPlacesDisabled = false;
 
   bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfFromPackage();
+  }
+
+  Future<void> _checkIfFromPackage() async {
+    try {
+      final postDoc = await FirebaseFirestore.instance
+          .collection('post')
+          .doc(widget.postId)
+          .get();
+
+      if (postDoc.exists && postDoc.data()?['postedFrom'] != null) {
+        setState(() {
+          packageId = postDoc.data()?['postedFrom'];
+        });
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> _addComment(int rating) async {
+    if (commentController.text.trim().isEmpty || packageId == null) return;
+
+    String stars = '⭐' * rating;
+
+    try {
+      final commentId = DateTime.now().millisecondsSinceEpoch.toString();
+      final commentData = {
+        'commentBy': currentUserId,
+        'comment': '$stars ,${commentController.text.trim()}',
+        'commentedTime': FieldValue.serverTimestamp(),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('packages')
+          .doc(packageId)
+          .update({
+        'comments.$commentId': commentData,
+      });
+    } catch (e) {
+      print('Error adding comment: $e');
+    }
+  }
 
   void _setLoading(bool loading) {
     setState(() {
@@ -41,6 +96,7 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
     tripBuddiesController.dispose();
     visitedPlacesController.dispose();
     tripDurationController.dispose();
+    commentController.dispose();
     super.dispose();
   }
 
@@ -123,6 +179,10 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
           .where((id) => id.isNotEmpty)
           .toList();
 
+      if (isFromPackage && packageId != null) {
+        await _addComment(tripRating!.toInt());
+      }
+
       await FirebaseFirestore.instance
           .collection('post')
           .doc(widget.postId)
@@ -130,7 +190,7 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
         'tripCompleted': true,
         'tripFeedback': tripFeedback,
         'tripRating': tripRating?.toInt(),
-        'tripBuddies': tripBuddiesIds, // Save only user IDs
+        'tripBuddies': tripBuddiesIds,
         'visitedPlaces': visitedPlaces,
         'tripCompletedDuration': tripCompletedDuration,
       });
@@ -160,8 +220,6 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
     if (remainingBuddyText.isNotEmpty) {
       await _addTag(remainingBuddyText, tripBuddiesController, tripBuddies);
     }
-
-    // Validate that all buddies exist
     final List<String> nonExistentBuddies = tripBuddies.where((buddy) {
       return !userDetails.containsKey(buddy);
     }).toList();
@@ -221,13 +279,25 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Complete Trip Details')),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'Post_complete',
+        onPressed: isLoading ? null : _onComplete,
+        backgroundColor: Colors.green,
+        icon: const Icon(Icons.check, color: Colors.white),
+        label: const Text('Complete', style: TextStyle(color: Colors.white)),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              right: 16.0,
+              top: 16.0,
+              bottom: 80.0,
+            ),
             child: Column(
               children: [
-                // Trip Rating
                 RatingBar.builder(
                   initialRating: tripRating ?? 0,
                   minRating: 1,
@@ -240,8 +310,28 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
                       setState(() => tripRating = rating),
                 ),
                 const SizedBox(height: 10),
-
-                // Trip Buddies Input
+                if (packageId != null) ...[
+                  CheckboxListTile(
+                    title: const Text('Trip completed from our package'),
+                    value: isFromPackage,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        isFromPackage = value ?? false;
+                      });
+                    },
+                    controlAffinity:
+                        ListTileControlAffinity.leading, // Checkbox on the left
+                  ),
+                  if (isFromPackage)
+                    TextField(
+                      controller: commentController,
+                      decoration: const InputDecoration(
+                        labelText: 'Package Feedback',
+                        hintText: 'Share your experience with this package',
+                      ),
+                      maxLines: 3,
+                    ),
+                ],
                 TextField(
                   controller: tripBuddiesController,
                   decoration: const InputDecoration(
@@ -257,60 +347,63 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
                     _handleTagInput(value, tripBuddiesController, tripBuddies);
                   },
                 ),
-                Wrap(
-                  children: tripBuddies.map((tag) {
-                    final userDetail = userDetails[tag];
-                    final fullName = userDetail?['fullname'] ?? "Unknown";
-                    final profileImage = userDetail?['userimage'] ?? "";
+                SizedBox(height: 10),
+                Container(
+                  height: 200,
+                  width: 400,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.all(4),
+                  child: SingleChildScrollView(
+                    child: Wrap(
+                      children: tripBuddies.map((tag) {
+                        final userDetail = userDetails[tag];
+                        final fullName = userDetail?['fullname'] ?? "Unknown";
+                        final profileImage = userDetail?['userimage'] ?? "";
 
-                    return Chip(
-                      labelPadding: const EdgeInsets.all(4.0),
-                      avatar: profileImage.isNotEmpty
-                          ? CircleAvatar(
-                              backgroundImage: NetworkImage(profileImage),
-                              radius: 12, // Small user image size
-                            )
-                          : const CircleAvatar(
-                              backgroundColor: Colors.grey,
-                              radius: 12, // Small default avatar size
-                              child: Icon(Icons.person, size: 14),
-                            ),
-                      label: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Username (with reduced text size)
-                          Flexible(
-                            child: Text(
-                              tag,
-                              style: const TextStyle(
-                                  fontSize: 7,
-                                  fontWeight: FontWeight
-                                      .bold), // Smaller font for username
-                              overflow: TextOverflow
-                                  .ellipsis, // Ensure long text is truncated
-                            ),
+                        return Chip(
+                          labelPadding: const EdgeInsets.all(4.0),
+                          avatar: profileImage.isNotEmpty
+                              ? CircleAvatar(
+                                  backgroundImage: NetworkImage(profileImage),
+                                  radius: 12,
+                                )
+                              : const CircleAvatar(
+                                  backgroundColor: Colors.grey,
+                                  radius: 12,
+                                  child: Icon(Icons.person, size: 14),
+                                ),
+                          label: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  tag,
+                                  style: const TextStyle(
+                                      fontSize: 7, fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Flexible(
+                                child: Text(
+                                  fullName,
+                                  style: const TextStyle(
+                                      fontSize: 5, color: Colors.grey),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 2),
-                          // Full Name (smaller font size)
-                          Flexible(
-                            child: Text(
-                              fullName,
-                              style: const TextStyle(
-                                  fontSize: 5,
-                                  color:
-                                      Colors.grey), // Smaller font for fullname
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () => _removeTag(tag, tripBuddies),
-                    );
-                  }).toList(),
+                          deleteIcon: const Icon(Icons.close, size: 16),
+                          onDeleted: () => _removeTag(tag, tripBuddies),
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
-
-                // Visited Places Input
                 Row(
                   children: [
                     Expanded(
@@ -389,21 +482,45 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
                     ),
                   ],
                 ),
-                Wrap(
-                  children: visitedPlaces.map((tag) {
-                    return Chip(
-                      label: Text(tag),
-                      deleteIcon: const Icon(Icons.close),
-                      onDeleted: () => _removeLocTag(tag, visitedPlaces),
-                    );
-                  }).toList(),
+                SizedBox(height: 10),
+                Container(
+                  height: 200,
+                  width: 400,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.all(4),
+                  child: SingleChildScrollView(
+                    child: Wrap(
+                      children: visitedPlaces.map((tag) {
+                        return GestureDetector(
+                          onTap: () => showPlaceDialog(
+                            context: context,
+                            placeName: tag,
+                          ),
+                          child: Chip(
+                            label: ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: 100),
+                              child: Text(
+                                tag,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            deleteIcon: const Icon(Icons.close),
+                            onDeleted: () => _removeLocTag(tag, visitedPlaces),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
-
                 TextField(
-                  decoration: const InputDecoration(labelText: 'Trip Feedback'),
+                  decoration:
+                      const InputDecoration(labelText: 'Trip Experience'),
                   onChanged: (value) => tripFeedback = value,
                 ),
-
                 TextField(
                   controller: tripDurationController,
                   keyboardType: TextInputType.number,
@@ -416,13 +533,7 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
                     });
                   },
                 ),
-
-                ElevatedButton(
-                  onPressed: isLoading ? null : _onComplete,
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: const Text('Complete'),
-                ),
+                SizedBox(height: 40),
               ],
             ),
           ),

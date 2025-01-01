@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../services/post/firebase_post.dart';
-import '../../../../../utils/confirm_dialogue.dart';
+import '../../../../../utils/dialogues.dart';
 import '../../../../../utils/loading.dart';
 import 'post_detail_screen.dart';
 

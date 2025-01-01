@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../services/one_signal.dart';
 import '../../../../services/user/user_services.dart';
-import '../../../../utils/confirm_dialogue.dart';
+import '../../../../utils/dialogues.dart';
 import '../../../../utils/loading.dart';
 import 'user_profile_view_screen.dart';
 
