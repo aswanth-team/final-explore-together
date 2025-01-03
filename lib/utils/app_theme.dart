@@ -3,33 +3,32 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppTheme {
-  final Color loginButtonColor;
-  final Color homeBgColor;
-  final Color appBarColor;
+  final Color primaryColor;
   final Color textColor;
+  final Color secondaryColor;
+  final Color secondaryTextColor;
 
   AppTheme({
-    required this.loginButtonColor,
-    required this.homeBgColor,
-    required this.appBarColor,
+    required this.primaryColor,
+    required this.secondaryColor,
     required this.textColor,
+    required this.secondaryTextColor,
   });
 }
 
 // Light and Dark Theme Definitions
 final AppTheme lightTheme = AppTheme(
-  loginButtonColor: Colors.blue,
-  homeBgColor: Colors.white,
-  appBarColor: Colors.lightBlue,
+  primaryColor: Color.fromARGB(255, 255, 255, 255),
+  secondaryColor: Color.fromARGB(255, 232, 232, 232),
   textColor: Colors.black,
+  secondaryTextColor: Color.fromARGB(255, 68, 68, 68),
 );
 
 final AppTheme darkTheme = AppTheme(
-  loginButtonColor: Colors.deepPurple,
-  homeBgColor: Colors.black,
-  appBarColor: Colors.deepPurpleAccent,
-  textColor: Colors.white,
-);
+    primaryColor: Color.fromARGB(255, 33, 33, 33),
+    secondaryColor: Color.fromARGB(255, 68, 68, 68),
+    textColor: Colors.white,
+    secondaryTextColor: Color.fromARGB(255, 216, 216, 216));
 
 // Enum for theme modes
 enum AppThemeMode {
@@ -64,7 +63,7 @@ class ThemeManager extends ChangeNotifier {
   Future<void> setThemeMode(AppThemeMode mode) async {
     _appThemeMode = mode;
     notifyListeners();
-    await _saveThemeMode(mode); // Save the theme locally
+    await _saveThemeMode(mode);
   }
 
   Future<void> loadTheme() async {
@@ -73,8 +72,10 @@ class ThemeManager extends ChangeNotifier {
     if (savedTheme != null) {
       _appThemeMode =
           AppThemeMode.values.firstWhere((e) => e.toString() == savedTheme);
+    } else {
+      _appThemeMode = AppThemeMode.system;
     }
-    // Listen for system theme changes
+
     PlatformDispatcher.instance.onPlatformBrightnessChanged =
         _onPlatformBrightnessChanged;
     notifyListeners();

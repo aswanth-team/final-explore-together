@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../services/one_signal.dart';
 import '../../../../services/user/user_services.dart';
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/dialogues.dart';
 import '../../../../utils/loading.dart';
 import 'user_profile_view_screen.dart';
@@ -55,10 +57,8 @@ class UserSearchPageState extends State<UserSearchPage> {
           ? const Icon(Icons.delete_forever, color: Colors.red)
           : const Icon(Icons.add, color: Colors.green),
       titleColor: isRemoved ? Colors.redAccent : Colors.greenAccent,
-      messageColor: Colors.black87,
       cancelButtonColor: Colors.blue,
       confirmButtonColor: isRemoved ? Colors.red : Colors.green,
-      backgroundColor: Colors.white,
     );
   }
 
@@ -87,17 +87,29 @@ class UserSearchPageState extends State<UserSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       body: Column(
         children: [
           const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
+              style: TextStyle(
+                color: appTheme.textColor,
+              ),
               controller: TextEditingController(text: query),
               decoration: InputDecoration(
-                hintText: "Search by username...",
-                prefixIcon: const Icon(Icons.search),
+                hintText: 'Search....',
+                hintStyle: TextStyle(
+                  color: appTheme.secondaryTextColor,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: appTheme.secondaryTextColor,
+                ),
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
                 border: OutlineInputBorder(
@@ -146,13 +158,13 @@ class UserSearchPageState extends State<UserSearchPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16.0, vertical: 8.0),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue : Colors.grey[200],
+                      color: isSelected ? Colors.blue : appTheme.secondaryColor,
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
                       category,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
+                        color: isSelected ? Colors.white : appTheme.textColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -193,9 +205,7 @@ class UserSearchPageState extends State<UserSearchPage> {
                       child: Card(
                         margin: EdgeInsets.zero,
                         elevation: 5,
-                        color: user['isRemoved']
-                            ? Colors.red.shade100
-                            : Colors.white,
+                        color: appTheme.secondaryColor,
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.zero,
                         ),
@@ -212,10 +222,10 @@ class UserSearchPageState extends State<UserSearchPage> {
                             Expanded(
                               child: Text(
                                 user['userName'],
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: appTheme.textColor),
                               ),
                             ),
                             ElevatedButton(
@@ -228,8 +238,8 @@ class UserSearchPageState extends State<UserSearchPage> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: user['isRemoved']
-                                    ? Colors.green[100]
-                                    : Colors.red[100],
+                                    ? Colors.green
+                                    : Colors.red,
                                 shape: const CircleBorder(),
                                 padding: const EdgeInsets.all(4),
                               ),
@@ -237,14 +247,12 @@ class UserSearchPageState extends State<UserSearchPage> {
                                 user['isRemoved'] ? "+" : "-",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  color: Colors.white,
                                   fontSize: 12.0,
                                 ),
                               ),
                             ),
-                            const SizedBox(
-                              width: 10,
-                            )
+                            const SizedBox(width: 10)
                           ],
                         ),
                       ),

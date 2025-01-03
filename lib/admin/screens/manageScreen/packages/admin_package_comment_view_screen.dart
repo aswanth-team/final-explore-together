@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/counder.dart';
 
 class AdminViewPackageCommentSheet extends StatefulWidget {
@@ -78,14 +80,18 @@ class AdminViewPackageCommentSheetState
   }
 
   void _showCommentOptions(Map<String, dynamic> comment) {
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+    final appTheme = themeManager.currentTheme;
     showModalBottomSheet(
+      backgroundColor: appTheme.secondaryColor,
       context: context,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: const Icon(Icons.delete),
-            title: const Text('Delete Comment'),
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: Text('Delete Comment',
+                style: TextStyle(color: appTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               _deleteComment(comment['id']);
@@ -98,10 +104,12 @@ class AdminViewPackageCommentSheetState
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: appTheme.primaryColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -109,7 +117,7 @@ class AdminViewPackageCommentSheetState
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: appTheme.secondaryColor,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(20)),
             ),
@@ -118,26 +126,26 @@ class AdminViewPackageCommentSheetState
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Comments:',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: appTheme.textColor),
                     ),
                     const SizedBox(width: 20),
                     Text(
                       formatCount(comments.length),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w400,
-                        color: Colors.grey,
+                        color: appTheme.secondaryTextColor,
                       ),
                     ),
                   ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close, color: appTheme.secondaryTextColor),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -161,7 +169,8 @@ class AdminViewPackageCommentSheetState
                         children: [
                           Text(
                             comment['comment'],
-                            style: const TextStyle(fontSize: 14),
+                            style: TextStyle(
+                                fontSize: 14, color: appTheme.textColor),
                             softWrap: true,
                             overflow: TextOverflow.visible,
                           ),
@@ -171,7 +180,7 @@ class AdminViewPackageCommentSheetState
                               (comment['commentedTime'] as Timestamp).toDate(),
                             ),
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: appTheme.secondaryTextColor,
                               fontSize: 12,
                             ),
                           ),
@@ -182,7 +191,8 @@ class AdminViewPackageCommentSheetState
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.more_vert),
+                            icon: Icon(Icons.more_vert,
+                                color: appTheme.secondaryTextColor),
                             onPressed: () => _showCommentOptions(comment),
                           ),
                         ],

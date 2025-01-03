@@ -1,9 +1,11 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/counder.dart';
+import '../../../../utils/dialogues.dart';
 import '../../../../utils/image_swipe.dart';
 import '../../../../utils/loading.dart';
 import 'admin_package_comment_view_screen.dart';
@@ -39,79 +41,20 @@ class AdminPackageDetailsScreenState extends State<AdminPackageDetailsScreen> {
     super.initState();
   }
 
-  void _showPlaceDialog(String placeName) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(
-                        Icons.close,
-                        size: 24,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                placeName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showDeleteConfirmationDialog() {
-    showDialog(
+    showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
-        ),
-        title: const Text(
-          'Delete Package',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text('Are you sure you want to delete this package?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _deletePackage();
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
+      title: 'Delete Package',
+      message: 'Are you sure you want to delete this package?',
+      cancelButtonText: 'Cancel',
+      confirmButtonText: 'Delete',
+      onConfirm: () {
+        _deletePackage();
+      },
+      titleIcon: Icon(Icons.delete_forever, color: Colors.red),
+      titleColor: Colors.redAccent,
+      cancelButtonColor: Colors.blue,
+      confirmButtonColor: Colors.red,
     );
   }
 
@@ -158,16 +101,23 @@ class AdminPackageDetailsScreenState extends State<AdminPackageDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Package Details'),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Package Details',
+          style: TextStyle(color: appTheme.textColor),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: const Icon(Icons.edit, color: Colors.blue),
             onPressed: _navigateToEditScreen,
           ),
           IconButton(
-            icon: const Icon(Icons.delete),
+            icon: const Icon(Icons.delete, color: Colors.red),
             onPressed: _showDeleteConfirmationDialog,
           ),
         ],
@@ -197,17 +147,19 @@ class AdminPackageDetailsScreenState extends State<AdminPackageDetailsScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.comment_outlined,
-                      color: Colors.grey,
+                      color: appTheme.secondaryTextColor,
                       size: 30,
                     ),
                     onPressed: () => _showCommentSheet(context),
                   ),
                   Text(
                     formatCount(widget.commentCount),
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: appTheme.secondaryTextColor),
                   ),
                 ],
               ),
@@ -219,17 +171,19 @@ class AdminPackageDetailsScreenState extends State<AdminPackageDetailsScreen> {
                     Center(
                       child: Text(
                         locationName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
-                        ),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            color: appTheme.textColor),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Center(
+                    Center(
                       child: Text(
                         'Places to Visit:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: appTheme.textColor),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -254,12 +208,13 @@ class AdminPackageDetailsScreenState extends State<AdminPackageDetailsScreen> {
 
                             return GestureDetector(
                               onTap: () {
-                                _showPlaceDialog(placeName);
+                                showPlaceDialog(
+                                    context: context, placeName: placeName);
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
+                                  color: appTheme.secondaryColor,
                                   border: Border.all(color: Colors.grey),
                                   borderRadius: BorderRadius.circular(30.0),
                                 ),
@@ -268,10 +223,10 @@ class AdminPackageDetailsScreenState extends State<AdminPackageDetailsScreen> {
                                     placeName.length > 15
                                         ? '${placeName.substring(0, 12)}...'
                                         : placeName,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: appTheme.textColor),
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
@@ -287,17 +242,17 @@ class AdminPackageDetailsScreenState extends State<AdminPackageDetailsScreen> {
                         children: [
                           Text(
                             'Prize: ₹$prize',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
+                              color: appTheme.textColor,
                             ),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             description,
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ),
+                            style: TextStyle(
+                                fontSize: 16, color: appTheme.textColor),
                             textAlign: TextAlign.center,
                           ),
                         ],

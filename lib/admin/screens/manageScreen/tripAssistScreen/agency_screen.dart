@@ -1,9 +1,10 @@
 import 'dart:math';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/loading.dart';
 import 'edit_agencies_screen.dart';
 import 'upload_agency_screen.dart';
@@ -75,8 +76,10 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
   @override
   Widget build(BuildContext context) {
     final List<String> categories = getCategories();
-
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       body: Column(
         children: [
           const SizedBox(height: 10),
@@ -87,9 +90,18 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
               onChanged: (query) {
                 _filterAgencies(query);
               },
+              style: TextStyle(
+                color: appTheme.textColor,
+              ),
               decoration: InputDecoration(
                 hintText: 'Search....',
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: TextStyle(
+                  color: appTheme.secondaryTextColor,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: appTheme.secondaryTextColor,
+                ),
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
                 border: OutlineInputBorder(
@@ -133,13 +145,13 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16.0, vertical: 8.0),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue : Colors.grey[200],
+                      color: isSelected ? Colors.blue : appTheme.secondaryColor,
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
                       category,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
+                        color: isSelected ? Colors.white : appTheme.textColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -149,14 +161,13 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
             ),
           ),
           SizedBox(
-            height: 10,
+            height: 20,
           ),
           Expanded(
             child: RefreshIndicator(
                 onRefresh: _refreshData,
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(
-                      0.0), // No space between the list items
+                  padding: const EdgeInsets.all(0.0),
                   itemCount: filteredAgencies.length,
                   itemBuilder: (context, index) {
                     final agency = filteredAgencies[index];
@@ -168,8 +179,7 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
                             url,
                             mode: LaunchMode.externalApplication,
                           ).catchError((error) {
-                            if (mounted) {
-                              // ignore: use_build_context_synchronously
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content:
@@ -190,11 +200,11 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
                         }
                       },
                       child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 3.0),
                         padding: const EdgeInsets.all(16.0),
                         decoration: BoxDecoration(
-                          color:
-                              Colors.grey[100], // Light grey background color
-                          // Removed border radius for no rounded corners
+                          borderRadius: BorderRadius.circular(12.0),
+                          color: appTheme.secondaryColor,
                         ),
                         child: Row(
                           children: [
@@ -214,8 +224,10 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
                             Expanded(
                               child: Text(
                                 agency['agencyName']!,
-                                style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: appTheme.textColor),
                               ),
                             ),
                             IconButton(
@@ -237,7 +249,7 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
                                     .collection('agencies')
                                     .doc(agency['id'])
                                     .delete();
-                                _refreshData(); // Refresh after deletion
+                                _refreshData();
                               },
                             ),
                           ],
@@ -250,6 +262,7 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'AGENCY_UPLOAD_BUTTON',
         onPressed: () {
           showDialog(
             context: context,

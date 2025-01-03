@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:provider/provider.dart';
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/counder.dart';
 import '../../../../utils/image_swipe.dart';
 import '../../../../utils/loading.dart';
@@ -157,8 +159,12 @@ class AdminPackagesScreenState extends State<AdminPackagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        backgroundColor: appTheme.primaryColor,
         title: TextField(
           enabled: !isOffline,
           controller: searchController,
@@ -180,22 +186,22 @@ class AdminPackagesScreenState extends State<AdminPackagesScreen> {
                 },
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: appTheme.primaryColor,
             hintText: isOffline
                 ? 'You are offline'
                 : 'Search by location or places...',
             hintStyle: isOffline
                 ? TextStyle(color: Colors.red[500], fontSize: 16)
-                : TextStyle(color: Colors.grey[500], fontSize: 16),
+                : TextStyle(color: appTheme.secondaryTextColor, fontSize: 16),
             prefixIcon: Icon(
               Icons.search,
-              color: Colors.grey[600],
+              color: appTheme.secondaryTextColor,
             ),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
                     icon: Icon(
                       Icons.clear,
-                      color: Colors.grey[600],
+                      color: appTheme.secondaryTextColor,
                     ),
                     onPressed: isOffline
                         ? null
@@ -204,6 +210,7 @@ class AdminPackagesScreenState extends State<AdminPackagesScreen> {
                               searchController.clear();
                               _searchQuery = "";
                               isSearchTriggered = false;
+                              _filterPackages();
                             });
                           },
                   )
@@ -224,7 +231,6 @@ class AdminPackagesScreenState extends State<AdminPackagesScreen> {
             ),
           ),
         ),
-        backgroundColor: Colors.white,
       ),
       body: Stack(
         children: [
@@ -245,7 +251,7 @@ class AdminPackagesScreenState extends State<AdminPackagesScreen> {
                             crossAxisCount: 1,
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
-                            childAspectRatio: 0.9,
+                            childAspectRatio: 1,
                           ),
                           itemCount: packages.length,
                           itemBuilder: (context, index) {
@@ -270,42 +276,42 @@ class AdminPackagesScreenState extends State<AdminPackagesScreen> {
                                 );
                               },
                               child: Card(
-                                margin: const EdgeInsets.all(8),
+                                color: appTheme.secondaryColor,
+                                margin: const EdgeInsets.all(0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 5),
-                                    Expanded(
-                                      child:
-                                          ImageCarousel(locationImages: images),
-                                    ),
+                                    ImageCarousel(locationImages: images),
                                     Padding(
-                                      padding: const EdgeInsets.all(8.0),
+                                      padding: const EdgeInsets.all(5),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.center,
                                         children: [
                                           Text(
                                             locationName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                                color: appTheme.textColor),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             'Prize: ₹$prize',
                                             style: TextStyle(
-                                              color: Colors.grey[600],
+                                              color:
+                                                  appTheme.secondaryTextColor,
                                             ),
                                           ),
                                           const SizedBox(height: 8),
                                           Row(
                                             children: [
                                               IconButton(
-                                                icon: const Icon(
+                                                icon: Icon(
                                                   Icons.comment_outlined,
-                                                  color: Colors.grey,
+                                                  color: appTheme
+                                                      .secondaryTextColor,
                                                   size: 24,
                                                 ),
                                                 onPressed: () =>
@@ -316,9 +322,10 @@ class AdminPackagesScreenState extends State<AdminPackagesScreen> {
                                                 formatCount(
                                                     commentCounts[package.id] ??
                                                         0),
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 14,
-                                                  color: Colors.grey,
+                                                  color: appTheme
+                                                      .secondaryTextColor,
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),

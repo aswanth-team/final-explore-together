@@ -2,9 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:provider/provider.dart';
 import '../../../../../services/post/firebase_post.dart';
 import '../../../../../services/user/user_services.dart';
 import '../../../../../utils/app_colors.dart';
+import '../../../../../utils/app_theme.dart';
 import '../../../../../utils/image_swipe.dart';
 import '../../../../../user/screens/userDetailsScreen/others_user_profile.dart';
 import '../../../../../utils/dialogues.dart';
@@ -85,9 +87,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Post Details'),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Post Details',
+          style: TextStyle(
+            color: appTheme.textColor,
+          ),
+        ),
       ),
       body: FutureBuilder(
         future: Future.wait([
@@ -107,7 +118,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 [
                   'https://res.cloudinary.com/dakew8wni/image/upload/v1733819145/public/userImage/fvv6lbzdjhyrc1fhemaj.jpg'
                 ];
-            final gender = userData['gender'];
 
             final locationDescription =
                 postData['locationDescription'] ?? 'unKnown';
@@ -129,14 +139,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // User info section
                     Row(
                       children: [
                         GestureDetector(
                           onTap: () {},
                           child: CircleAvatar(
                             radius: 30.0,
-                            backgroundImage: NetworkImage(userimage),
+                            backgroundImage:
+                                CachedNetworkImageProvider(userimage),
                           ),
                         ),
                         const SizedBox(width: 10.0),
@@ -144,22 +154,19 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              username, // Display full name
-                              style: const TextStyle(
-                                  fontSize: 18.0, fontWeight: FontWeight.bold),
-                            ),
-                            Text('Gender: $gender'),
+                              username,
+                              style: TextStyle(
+                                  fontSize: 18.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: appTheme.textColor),
+                            )
                           ],
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 16.0),
-
                     ImageCarousel(locationImages: locationImages),
-
                     const SizedBox(height: 16.0),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -170,25 +177,27 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         ),
                         Text(
                           formatCount(likeCount),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: appTheme.textColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(width: 30),
                         IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.comment_outlined,
-                            color: Colors.grey,
+                            color: appTheme.textColor,
                             size: 30,
                           ),
                           onPressed: () => _showCommentSheet(context),
                         ),
                         Text(
                           formatCount(commentCounts),
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: appTheme.textColor),
                         ),
                       ],
                     ),
@@ -203,27 +212,23 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           children: [
                             Text(
                               'Trip to $locationName ',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: appTheme.textColor),
                             ),
                             const SizedBox(height: 8.0),
                             SizedBox(
-                              width: MediaQuery.of(context).size.width *
-                                  0.8, // Limit width for wrapping
+                              width: MediaQuery.of(context).size.width * 0.8,
                               child: Text(
                                 locationDescription,
-                                textAlign: TextAlign
-                                    .center, // Ensures the text is centered horizontally
-                                softWrap:
-                                    true, // Wrap the text to next line if it overflows
-                                maxLines: 3, // Limit the number of lines
-                                overflow: TextOverflow
-                                    .ellipsis, // Show ellipsis if text overflows
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                ),
+                                textAlign: TextAlign.center,
+                                softWrap: true,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: appTheme.secondaryTextColor),
                               ),
                             ),
                             const SizedBox(height: 10.0),
@@ -232,7 +237,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       ],
                     ),
                     const Divider(
-                      color: Colors.black,
                       thickness: 2.0,
                       indent: 20.0,
                       endIndent: 20.0,
@@ -242,8 +246,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       Center(
                         child: Text(
                           'Trip Duration Plan : $tripDuration days',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: appTheme.textColor),
                         ),
                       ),
                       const SizedBox(height: 8.0),
@@ -283,24 +289,35 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ),
                                     itemCount: planToVisitPlaces.length,
                                     itemBuilder: (context, index) {
-                                      return Container(
-                                        padding: const EdgeInsets.all(8.0),
-                                        decoration: BoxDecoration(
-                                          color: const Color.fromARGB(
-                                              255, 244, 255, 215),
-                                          border:
-                                              Border.all(color: Colors.grey),
-                                          borderRadius:
-                                              BorderRadius.circular(8.0),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            planToVisitPlaces[index],
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
+                                      final placeName =
+                                          planToVisitPlaces[index];
+
+                                      return GestureDetector(
+                                        onTap: () {
+                                          showPlaceDialog(
+                                              context: context,
+                                              placeName: placeName);
+                                        },
+                                        child: Container(
+                                          padding: EdgeInsets.all(8.0),
+                                          decoration: BoxDecoration(
+                                            color: appTheme.secondaryColor,
+                                            border:
+                                                Border.all(color: Colors.grey),
+                                            borderRadius:
+                                                BorderRadius.circular(30.0),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              placeName.length > 15
+                                                  ? '${placeName.substring(0, 12)}...'
+                                                  : placeName,
+                                              style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: appTheme.textColor),
+                                              textAlign: TextAlign.center,
                                             ),
-                                            textAlign: TextAlign.center,
                                           ),
                                         ),
                                       );
@@ -452,25 +469,39 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                           ),
                                           itemCount: visitedPalaces.length,
                                           itemBuilder: (context, index) {
-                                            return Container(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              decoration: BoxDecoration(
-                                                color: const Color.fromARGB(
-                                                    255, 179, 255, 251),
-                                                border: Border.all(
-                                                    color: Colors.grey),
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  visitedPalaces[index],
-                                                  style: const TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
+                                            final placeName =
+                                                visitedPalaces[index];
+
+                                            return GestureDetector(
+                                              onTap: () {
+                                                showPlaceDialog(
+                                                    context: context,
+                                                    placeName: placeName);
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue
+                                                      .withOpacity(0.1),
+                                                  border: Border.all(
+                                                      color: Colors.grey),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          30.0),
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    placeName.length > 15
+                                                        ? '${placeName.substring(0, 12)}...'
+                                                        : placeName,
+                                                    style: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    textAlign: TextAlign.center,
                                                   ),
-                                                  textAlign: TextAlign.center,
                                                 ),
                                               ),
                                             );
@@ -538,10 +569,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 titleIcon: const Icon(Icons.delete_forever,
                                     color: Colors.red),
                                 titleColor: Colors.redAccent,
-                                messageColor: Colors.black87,
                                 cancelButtonColor: Colors.blue,
                                 confirmButtonColor: Colors.red,
-                                backgroundColor: Colors.white,
                                 subMessage:
                                     'This action is irreversible. The post will be permanently deleted.',
                               );

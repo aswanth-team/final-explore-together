@@ -105,10 +105,8 @@ class UserTripImagesWidgetState extends State<UserTripImagesWidget> {
                                           Icons.delete_forever,
                                           color: Colors.red),
                                       titleColor: Colors.redAccent,
-                                      messageColor: Colors.black87,
                                       cancelButtonColor: Colors.blue,
                                       confirmButtonColor: Colors.red,
-                                      backgroundColor: Colors.white,
                                       subMessage:
                                           'This action cannot be undone. The image will be permanently deleted.',
                                     );
@@ -171,10 +169,8 @@ class UserTripImagesWidgetState extends State<UserTripImagesWidget> {
                             titleIcon: const Icon(Icons.delete_forever,
                                 color: Colors.red),
                             titleColor: Colors.redAccent,
-                            messageColor: Colors.black87,
                             cancelButtonColor: Colors.blue,
                             confirmButtonColor: Colors.red,
-                            backgroundColor: Colors.white,
                             subMessage:
                                 'This action cannot be undone. The image will be permanently deleted.',
                           );

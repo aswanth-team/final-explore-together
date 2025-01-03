@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../services/post/firebase_post.dart';
 import '../../../../utils/dialogues.dart';
+import '../../../../utils/image_swipe.dart';
 import '../../../../utils/loading.dart';
 import 'post_complete_screen.dart';
 import 'post_detail_screen.dart';
@@ -63,10 +63,8 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                     titleIcon:
                         const Icon(Icons.delete_forever, color: Colors.red),
                     titleColor: Colors.redAccent,
-                    messageColor: Colors.black87,
                     cancelButtonColor: Colors.blue,
                     confirmButtonColor: Colors.red,
-                    backgroundColor: Colors.white,
                     subMessage:
                         'This action is irreversible. The post will be permanently deleted.',
                   );
@@ -161,15 +159,17 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image(
-                            image: CachedNetworkImageProvider(
-                              post['locationImages']?.isNotEmpty == true
-                                  ? post['locationImages'][0]
-                                  : 'https://res.cloudinary.com/dakew8wni/image/upload/v1734019072/public/postimages/mwtjtugc4ppu02vwiv49.png',
-                            ),
-                            fit: BoxFit.cover,
+                          child: SizedBox(
                             height: 100,
                             width: double.infinity,
+                            child: ImageCarousel(
+                              locationImages:
+                                  post['locationImages']?.isNotEmpty == true
+                                      ? post['locationImages']
+                                      : [
+                                          'https://res.cloudinary.com/dakew8wni/image/upload/v1734019072/public/postimages/mwtjtugc4ppu02vwiv49.png',
+                                        ],
+                            ),
                           ),
                         ),
                         Padding(

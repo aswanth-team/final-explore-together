@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../../../services/cloudinary_upload.dart';
 import '../../../services/one_signal.dart';
+import '../../../utils/app_theme.dart';
 
 class SentMessagePage extends StatefulWidget {
   final String? userNameFromPreviousPage;
@@ -25,6 +27,7 @@ class SentMessagePageState extends State<SentMessagePage> {
   bool sendToAll = true;
   bool isLoading = false;
   File? _selectedImage;
+  bool _isUploadImageChecked = false;
 
   final CloudinaryService cloudinaryService = CloudinaryService(
     uploadPreset: 'notificationImages',
@@ -207,7 +210,14 @@ class SentMessagePageState extends State<SentMessagePage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
+      appBar: AppBar(
+        title: Text('Notify', style: TextStyle(color: appTheme.textColor)),
+        backgroundColor: appTheme.secondaryColor,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
@@ -215,23 +225,27 @@ class SentMessagePageState extends State<SentMessagePage> {
             const SizedBox(
               height: 20,
             ),
-            // Switch for sending to all users
             SwitchListTile(
-              title: const Text(
+              title: Text(
                 'Send to all users',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: appTheme.textColor),
               ),
+              activeColor: Colors.green,
+              activeTrackColor: appTheme.secondaryTextColor,
+              inactiveThumbColor: Colors.blue,
+              inactiveTrackColor: appTheme.secondaryTextColor,
               value: sendToAll,
               onChanged: widget.disableSendToAll
-                  ? null // Disable switch if `disableSendToAll` is true
+                  ? null
                   : (bool value) {
                       setState(() {
                         sendToAll = value;
                       });
                     },
             ),
-
-            // Input field for specific user  (visible if sendToAll is false)
             if (!sendToAll)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -255,9 +269,7 @@ class SentMessagePageState extends State<SentMessagePage> {
                   ),
                 ),
               ),
-
             const SizedBox(height: 20),
-
             TextFormField(
               controller: _titleController,
               maxLines: null,
@@ -274,15 +286,10 @@ class SentMessagePageState extends State<SentMessagePage> {
                 ),
               ),
             ),
-
-            const SizedBox(
-              height: 10,
-            ),
-
-            // Message input field
+            const SizedBox(height: 10),
             TextFormField(
               controller: _messageController,
-              maxLines: null, // This makes the TextField multi-line
+              maxLines: null,
               keyboardType: TextInputType.multiline,
               decoration: InputDecoration(
                 labelText: 'Enter message',
@@ -296,14 +303,9 @@ class SentMessagePageState extends State<SentMessagePage> {
                 ),
               ),
             ),
-
             SizedBox(height: 20),
-
-            // Send notification button
             ElevatedButton(
-              onPressed: isLoading
-                  ? null
-                  : sendNotification, // Disable button when loading
+              onPressed: isLoading ? null : sendNotification,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -316,24 +318,66 @@ class SentMessagePageState extends State<SentMessagePage> {
                   ? const CircularProgressIndicator(
                       color: Colors.white,
                     )
-                  : const Text('Send Notification'),
+                  : Text(
+                      'Send Notification',
+                      style: TextStyle(color: Colors.white),
+                    ),
             ),
             const SizedBox(height: 20),
             if (sendToAll)
               Column(
                 children: [
-                  if (_selectedImage != null)
-                    Image.file(
-                      _selectedImage!,
-                      height: 150,
-                      width: 150,
-                      fit: BoxFit.cover,
-                    ),
-                  ElevatedButton.icon(
-                    onPressed: _pickImage,
-                    icon: const Icon(Icons.image),
-                    label: const Text("Upload Image"),
+                  CheckboxListTile(
+                    title: Text("Upload Image",
+                        style: TextStyle(color: appTheme.textColor)),
+                    value: _isUploadImageChecked,
+                    activeColor: Colors.blue,
+                    checkColor: Colors.white,
+                    onChanged: (bool? newValue) {
+                      setState(() {
+                        _isUploadImageChecked = newValue ?? false;
+                      });
+                    },
                   ),
+                  if (_isUploadImageChecked)
+                    if (_selectedImage != null)
+                      Image.file(
+                        _selectedImage!,
+                        height: 150,
+                        width: 150,
+                        fit: BoxFit.cover,
+                      ),
+                  if (_isUploadImageChecked)
+                    _selectedImage == null
+                        ? Center(
+                            child: GestureDetector(
+                              onTap:
+                                  _pickImage, // Reuse the same image picker function
+                              child: Container(
+                                width: 200,
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.image,
+                                        size: 40, color: Colors.grey),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Upload Image',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Text(''),
+                          )
                 ],
               ),
             const SizedBox(height: 20),

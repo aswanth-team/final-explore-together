@@ -79,10 +79,8 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
       },
       titleIcon: const Icon(Icons.post_add, color: Colors.blue),
       titleColor: Colors.blueAccent,
-      messageColor: Colors.black87,
       cancelButtonColor: Colors.red,
       confirmButtonColor: Colors.blue,
-      backgroundColor: Colors.white,
     );
   }
 

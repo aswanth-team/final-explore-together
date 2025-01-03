@@ -1,6 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:flutter/material.dart';
 import '../../../../../services/post/firebase_post.dart';
+import '../../../../../utils/image_swipe.dart';
 import '../../../../../utils/loading.dart';
 import 'other_user_post_detail_screen.dart';
 
@@ -93,15 +94,18 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: Image(
-                                  image: CachedNetworkImageProvider(
-                                    post['locationImages']?.isNotEmpty == true
-                                        ? post['locationImages'][0]
-                                        : 'https://res.cloudinary.com/dakew8wni/image/upload/v1734019072/public/postimages/mwtjtugc4ppu02vwiv49.png',
-                                  ),
-                                  fit: BoxFit.cover,
+                                child: SizedBox(
                                   height: 100,
                                   width: double.infinity,
+                                  child: ImageCarousel(
+                                    locationImages:
+                                        post['locationImages']?.isNotEmpty ==
+                                                true
+                                            ? post['locationImages']
+                                            : [
+                                                'https://res.cloudinary.com/dakew8wni/image/upload/v1734019072/public/postimages/mwtjtugc4ppu02vwiv49.png',
+                                              ],
+                                  ),
                                 ),
                               ),
                               Padding(

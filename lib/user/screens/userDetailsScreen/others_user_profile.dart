@@ -261,16 +261,11 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                               8.0), // Optional: Rounded corners
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                              8.0), // Match border radius
-                                          child: CachedNetworkImage(
-                                            imageUrl:
-                                                userImage, // URL of the image
-                                            placeholder: (context, url) =>
-                                                const LoadingAnimation(), // Placeholder widget while loading
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    const Icon(Icons.error),
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          child: Image(
+                                            image: CachedNetworkImageProvider(
+                                                userImage),
                                             fit: BoxFit.cover,
                                           ),
                                         ),

@@ -1270,10 +1270,8 @@ class GroupChatScreenState extends State<GroupChatScreen> {
       },
       titleIcon: Icon(Icons.exit_to_app, color: Colors.red),
       titleColor: Colors.redAccent,
-      messageColor: Colors.black87,
       cancelButtonColor: Colors.blue,
       confirmButtonColor: Colors.red,
-      backgroundColor: Colors.white,
     );
   }
 }

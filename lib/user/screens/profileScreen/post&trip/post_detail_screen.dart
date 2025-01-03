@@ -578,10 +578,8 @@ class _CurrentUserPostDetailScreenState
                                 titleIcon: const Icon(Icons.delete_forever,
                                     color: Colors.red),
                                 titleColor: Colors.redAccent,
-                                messageColor: Colors.black87,
                                 cancelButtonColor: Colors.blue,
                                 confirmButtonColor: Colors.red,
-                                backgroundColor: Colors.white,
                                 subMessage:
                                     'This action is irreversible. The post will be permanently deleted.',
                               );

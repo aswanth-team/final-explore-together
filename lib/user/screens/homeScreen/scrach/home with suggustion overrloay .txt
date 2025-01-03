@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:string_similarity/string_similarity.dart';
@@ -30,17 +32,20 @@ class HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
   String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
+  Set<String> shownPostIds = {};
+  final Random _random = Random();
+
   String _searchQuery = "";
   List<String> suggestions = [];
   bool isSearchTriggered = false;
   bool isLoading = false;
+  bool hasMorePosts = true;
+  bool isOffline = false;
+
   List<DocumentSnapshot> posts = [];
   Map<String, Map<String, dynamic>> users = {};
   Map<String, bool> likedPosts = {};
   Map<String, int> commentCounts = {};
-  Map<String, int> likeCounts = {};
-  OverlayEntry? _overlayEntry;
-  final LayerLink _layerLink = LayerLink();
 
   Future<void> _fetchCommentCounts(String postId) async {
     try {
@@ -67,14 +72,24 @@ class HomePageState extends State<HomePage> {
     );
   }
 
+  Map<String, int> likeCounts = {};
+
+  DocumentSnapshot? _lastDocument;
+  final int _pageSize = 5;
+
+  late StreamSubscription<List<ConnectivityResult>> connectivitySubscription;
+
   @override
   void initState() {
     super.initState();
     fetchSuggestions();
-    _fetchPosts();
+    _initializeConnectivity();
+    _scrollController.addListener(_onScroll);
+    _fetchInitialPosts();
   }
 
   Future<void> toggleLike(String postId) async {
+    if (isOffline) return;
     setState(() {
       bool newLikeStatus = !(likedPosts[postId] ?? false);
       likedPosts[postId] = newLikeStatus;
@@ -104,6 +119,279 @@ class HomePageState extends State<HomePage> {
       print('Error toggling like: $e');
     }
   }
+
+  Future<void> _initializeConnectivity() async {
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (mounted) {
+        setState(() {
+          isOffline = connectivityResult == ConnectivityResult.none;
+        });
+      }
+      connectivitySubscription = Connectivity()
+          .onConnectivityChanged
+          .listen((List<ConnectivityResult> results) {
+        if (mounted) {
+          setState(() {
+            isOffline = results.contains(ConnectivityResult.none);
+          });
+        }
+      });
+    } catch (e) {
+      print('Error initializing connectivity: $e');
+    }
+  }
+
+  Future<void> fetchSuggestions() async {
+    final querySnapshot =
+        await FirebaseFirestore.instance.collection('post').get();
+
+    if (!mounted) return;
+
+    final suggestionSet = <String>{};
+    for (var doc in querySnapshot.docs) {
+      final data = doc.data();
+      suggestionSet.add(data['locationName'] ?? '');
+      suggestionSet.addAll(List<String>.from(data['visitedPlaces'] ?? []));
+      suggestionSet.addAll(List<String>.from(data['planToVisitPlaces'] ?? []));
+    }
+
+    if (mounted) {
+      setState(() {
+        suggestions = suggestionSet.toList();
+      });
+    }
+  }
+
+  Future<void> _fetchInitialPosts() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final randomQuery = await FirebaseFirestore.instance
+          .collection('post')
+          .orderBy(FieldPath.documentId)
+          .limit(_pageSize)
+          .get();
+      final filteredDocs = randomQuery.docs
+          .where((doc) => !shownPostIds.contains(doc.id))
+          .toList();
+
+      if (filteredDocs.isEmpty) {
+        if (mounted) {
+          setState(() {
+            hasMorePosts = false;
+            isLoading = false;
+          });
+        }
+        return;
+      }
+      filteredDocs.shuffle(_random);
+      for (var doc in filteredDocs) {
+        shownPostIds.add(doc.id);
+      }
+      _lastDocument = filteredDocs.last;
+      await _fetchUsersForPosts(filteredDocs);
+
+      if (mounted) {
+        setState(() {
+          posts = filteredDocs;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching initial posts: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchMorePosts() async {
+    if (!hasMorePosts || isLoading) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('post')
+          .orderBy(FieldPath.documentId)
+          .startAfterDocument(_lastDocument!)
+          .limit(_pageSize)
+          .get();
+      final filteredDocs = querySnapshot.docs
+          .where((doc) => !shownPostIds.contains(doc.id))
+          .toList();
+
+      if (filteredDocs.isEmpty) {
+        if (mounted) {
+          setState(() {
+            hasMorePosts = false;
+            isLoading = false;
+          });
+        }
+        return;
+      }
+      filteredDocs.shuffle(_random);
+      for (var doc in filteredDocs) {
+        shownPostIds.add(doc.id);
+      }
+      _lastDocument = filteredDocs.last;
+      await _fetchUsersForPosts(filteredDocs);
+
+      if (mounted) {
+        setState(() {
+          posts.addAll(filteredDocs);
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching more posts: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchUsersForPosts(List<DocumentSnapshot> newPosts) async {
+    final userIds = newPosts.map((post) => post['userid']).toSet();
+
+    if (userIds.isEmpty) return;
+
+    try {
+      final userSnapshots = await FirebaseFirestore.instance
+          .collection('user')
+          .where(FieldPath.documentId, whereIn: userIds.toList())
+          .get();
+
+      final newUsers = {for (var doc in userSnapshots.docs) doc.id: doc.data()};
+
+      // Check liked status and count for each post
+      for (var post in newPosts) {
+        final likes = List<String>.from(post['likes'] ?? []);
+        likedPosts[post.id] = likes.contains(currentUserId);
+        likeCounts[post.id] = likes.length; // Store the count
+      }
+
+      for (var post in newPosts) {
+        _fetchCommentCounts(post.id);
+      }
+
+      if (mounted) {
+        setState(() {
+          users.addAll(newUsers);
+        });
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
+
+  Future<void> _searchPosts() async {
+    setState(() {
+      isLoading = true;
+      posts.clear();
+      hasMorePosts = true;
+      _lastDocument = null;
+    });
+
+    try {
+      Query query =
+          FirebaseFirestore.instance.collection('post').limit(_pageSize);
+
+      final querySnapshot = await query.get();
+
+      if (querySnapshot.docs.isEmpty) {
+        if (mounted) {
+          setState(() {
+            hasMorePosts = false;
+            isLoading = false;
+          });
+        }
+        return;
+      }
+      final filteredPosts = querySnapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final locationName =
+            data['locationName']?.toString().toLowerCase() ?? "";
+        final visitedPlaces = List<String>.from(data['visitedPlaces'] ?? [])
+            .map((e) => e.toLowerCase())
+            .toList();
+        final planToVisitPlaces =
+            List<String>.from(data['planToVisitPlaces'] ?? [])
+                .map((e) => e.toLowerCase())
+                .toList();
+
+        final allSearchableFields = [
+          locationName,
+          ...visitedPlaces,
+          ...planToVisitPlaces
+        ];
+
+        return allSearchableFields.any(
+            (field) => field.similarityTo(_searchQuery.toLowerCase()) > 0.6);
+      }).toList();
+
+      if (filteredPosts.isEmpty) {
+        if (mounted) {
+          setState(() {
+            hasMorePosts = false;
+            isLoading = false;
+          });
+        }
+        return;
+      }
+
+      _lastDocument = filteredPosts.last;
+
+      await _fetchUsersForPosts(filteredPosts);
+
+      if (mounted) {
+        setState(() {
+          posts = filteredPosts;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error searching posts: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      if (_searchQuery.isNotEmpty) {
+        _searchPosts();
+      } else {
+        _fetchMorePosts();
+      }
+    }
+  }
+
+  Future<void> _refreshPosts() async {
+    setState(() {
+      posts.clear();
+      shownPostIds.clear();
+      _lastDocument = null;
+      hasMorePosts = true;
+    });
+    await _fetchInitialPosts();
+  }
+
+  OverlayEntry? _overlayEntry;
+  final LayerLink _layerLink = LayerLink();
 
   void _showSuggestions() {
     _removeOverlay();
@@ -167,153 +455,13 @@ class HomePageState extends State<HomePage> {
     _overlayEntry = null;
   }
 
-  Future<void> fetchSuggestions() async {
-    final querySnapshot =
-        await FirebaseFirestore.instance.collection('post').get();
-
-    if (!mounted) return;
-
-    final suggestionSet = <String>{};
-    for (var doc in querySnapshot.docs) {
-      final data = doc.data();
-      suggestionSet.add(data['locationName'] ?? '');
-      suggestionSet.addAll(List<String>.from(data['visitedPlaces'] ?? []));
-      suggestionSet.addAll(List<String>.from(data['planToVisitPlaces'] ?? []));
-    }
-
-    if (mounted) {
-      setState(() {
-        suggestions = suggestionSet.toList();
-      });
-    }
-  }
-
-  Future<void> _fetchPosts() async {
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('post')
-          .where('userid', isNotEqualTo: currentUserId)
-          .get();
-
-      await _fetchUsersForPosts(querySnapshot.docs);
-
-      if (mounted) {
-        setState(() {
-          posts = querySnapshot.docs;
-          posts.shuffle();
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error fetching posts: $e');
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _fetchUsersForPosts(List<DocumentSnapshot> newPosts) async {
-    final userIds = newPosts.map((post) => post['userid']).toSet();
-
-    if (userIds.isEmpty) return;
-
-    try {
-      final userSnapshots = await FirebaseFirestore.instance
-          .collection('user')
-          .where(FieldPath.documentId, whereIn: userIds.toList())
-          .get();
-
-      final newUsers = {for (var doc in userSnapshots.docs) doc.id: doc.data()};
-
-      for (var post in newPosts) {
-        final likes = List<String>.from(post['likes'] ?? []);
-        likedPosts[post.id] = likes.contains(currentUserId);
-        likeCounts[post.id] = likes.length;
-      }
-
-      for (var post in newPosts) {
-        _fetchCommentCounts(post.id);
-      }
-
-      if (mounted) {
-        setState(() {
-          users.addAll(newUsers);
-        });
-      }
-    } catch (e) {
-      print('Error fetching user data: $e');
-    }
-  }
-
-  Future<void> _searchPosts() async {
-    setState(() {
-      isLoading = true;
-      posts.clear();
-    });
-
-    try {
-      final querySnapshot =
-          await FirebaseFirestore.instance.collection('post').get();
-
-      final filteredPosts = querySnapshot.docs.where((doc) {
-        final data = doc.data();
-        final locationName =
-            data['locationName']?.toString().toLowerCase() ?? "";
-        final visitedPlaces = List<String>.from(data['visitedPlaces'] ?? [])
-            .map((e) => e.toLowerCase())
-            .toList();
-        final planToVisitPlaces =
-            List<String>.from(data['planToVisitPlaces'] ?? [])
-                .map((e) => e.toLowerCase())
-                .toList();
-
-        final allSearchableFields = [
-          locationName,
-          ...visitedPlaces,
-          ...planToVisitPlaces
-        ];
-        return allSearchableFields.any(
-            (field) => field.similarityTo(_searchQuery.toLowerCase()) > 0.6);
-      }).toList();
-
-      await _fetchUsersForPosts(filteredPosts);
-
-      if (mounted) {
-        setState(() {
-          posts = filteredPosts;
-          posts.shuffle();
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error searching posts: $e');
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _refreshPosts() async {
-    setState(() {
-      posts.clear();
-    });
-    await _fetchPosts();
-  }
-
   @override
   void dispose() {
     _removeOverlay();
+    _scrollController.removeListener(_onScroll);
     _searchController.dispose();
     _scrollController.dispose();
-    _removeOverlay();
+    connectivitySubscription.cancel();
     super.dispose();
   }
 
@@ -325,58 +473,76 @@ class HomePageState extends State<HomePage> {
         child: AppBar(
           toolbarHeight: kToolbarHeight + 10.0,
           title: TextField(
+            enabled: !isOffline,
             controller: _searchController,
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-                isSearchTriggered = false;
-                if (value.isNotEmpty) {
-                  _showSuggestions();
-                } else {
-                  _removeOverlay();
-                }
-              });
-            },
-            onSubmitted: (value) {
-              setState(() {
-                _searchQuery = value;
-                isSearchTriggered = true;
-              });
-              _removeOverlay();
-              _searchPosts();
-            },
+            onChanged: isOffline
+                ? null
+                : (value) {
+                    setState(() {
+                      _searchQuery = value;
+                      isSearchTriggered = false;
+                      if (value.isNotEmpty) {
+                        _showSuggestions();
+                      } else {
+                        _removeOverlay();
+                      }
+                    });
+                  },
+            onSubmitted: isOffline
+                ? null
+                : (value) {
+                    setState(() {
+                      _searchQuery = value;
+                      isSearchTriggered = true;
+                    });
+                    _removeOverlay();
+                    _searchPosts();
+                  },
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.white,
-              hintText: 'Search...',
-              hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
-              prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+              hintText: isOffline ? 'You are offline' : 'Search...',
+              hintStyle: isOffline
+                  ? TextStyle(color: Colors.red[500], fontSize: 16)
+                  : TextStyle(color: Colors.grey[500], fontSize: 16),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Colors.grey[600],
+              ),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
-                      icon: Icon(Icons.clear, color: Colors.grey[600]),
-                      onPressed: () {
-                        setState(() {
-                          _searchController.clear();
-                          _searchQuery = "";
-                          isSearchTriggered = false;
-                          _fetchPosts();
-                        });
-                      },
+                      icon: Icon(
+                        Icons.clear,
+                        color: Colors.grey[600],
+                      ),
+                      onPressed: isOffline
+                          ? null // Disable clearing search when offline
+                          : () {
+                              setState(() {
+                                _searchController.clear();
+                                _searchQuery = "";
+                                isSearchTriggered = false;
+                                _fetchInitialPosts();
+                              });
+                            },
                     )
                   : null,
               contentPadding:
                   const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.blue, width: 2),
+                borderSide: const BorderSide(
+                    color: Colors.blue, width: 2), // Add a border here
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.blue, width: 2),
+                borderSide: const BorderSide(
+                    color: Colors.blue, width: 2), // Border when focused
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.grey, width: 1),
+                borderSide: const BorderSide(
+                    color: Colors.grey, width: 1), // Border when enabled
               ),
             ),
           ),
@@ -390,6 +556,7 @@ class HomePageState extends State<HomePage> {
                   .snapshots(),
               builder: (context, snapshot) {
                 int unseenCount = 0;
+
                 if (snapshot.hasData) {
                   unseenCount = snapshot.data!.docs.length;
                 }
@@ -459,10 +626,16 @@ class HomePageState extends State<HomePage> {
                         return const SizedBox.shrink();
                       }
                       return ListTile(
-                        title: Text(suggestion),
+                        title: Text(
+                          suggestion,
+                          maxLines: 1, // Ensure the text is limited to one line
+                          overflow: TextOverflow
+                              .ellipsis, // Show "..." for overflowing text
+                          style: const TextStyle(fontSize: 16.0),
+                        ),
+                        trailing: const Icon(Icons.search, color: Colors.grey),
                         onTap: () {
                           setState(() {
-                            _searchController.text = suggestion;
                             _searchQuery = suggestion;
                             isSearchTriggered = true;
                             _searchPosts();
@@ -481,14 +654,31 @@ class HomePageState extends State<HomePage> {
                         ),
                       )
                     : RefreshIndicator(
-                        onRefresh: _refreshPosts,
+                        onRefresh: isOffline ? () async {} : _refreshPosts,
                         child: ListView.builder(
                           controller: _scrollController,
                           itemCount: posts.length + (isLoading ? 1 : 0),
                           itemBuilder: (context, index) {
                             if (index == posts.length) {
                               return Center(
-                                child: const LoadingAnimation(),
+                                child: isOffline
+                                    ? const Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            'You are offline',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 10),
+                                          LoadingAnimation(),
+                                        ],
+                                      )
+                                    : const LoadingAnimation(),
                               );
                             }
 
@@ -496,9 +686,11 @@ class HomePageState extends State<HomePage> {
                                 posts[index].data() as Map<String, dynamic>;
                             String postId = posts[index].id;
                             String userId = post['userid'];
+
                             if (!users.containsKey(userId)) return Container();
 
                             var user = users[userId]!;
+
                             if (user['isRemoved'] == true) return Container();
 
                             String locationName = post['locationName'];
@@ -508,21 +700,19 @@ class HomePageState extends State<HomePage> {
                             bool tripCompleted = post['tripCompleted'];
                             bool isLiked = likedPosts[postId] ?? false;
                             int likeCount = likeCounts[postId] ?? 0;
-
                             return GestureDetector(
                               onTap: () {
                                 if (userId == currentUserId) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          CurrentUserPostDetailScreen(
-                                        postId: postId,
-                                        userId: userId,
-                                        commentCount:
-                                            commentCounts[postId] ?? 0,
-                                      ),
-                                    ),
+                                        builder: (context) =>
+                                            CurrentUserPostDetailScreen(
+                                              postId: postId,
+                                              userId: userId,
+                                              commentCount:
+                                                  commentCounts[postId] ?? 0,
+                                            )),
                                   );
                                 } else {
                                   Navigator.push(
@@ -544,7 +734,7 @@ class HomePageState extends State<HomePage> {
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15)),
                                 color: tripCompleted
-                                    ? Colors.green[50]
+                                    ? Colors.green[100]
                                     : Colors.white,
                                 child: Stack(
                                   children: [
@@ -736,6 +926,10 @@ class HomePageState extends State<HomePage> {
                     child: FloatingChatButton(
                       heroTag: 'Home_AI_Chat',
                       onPressed: () {
+                        //showDialog(
+                        //    context: context,
+                        //    builder: (_) => const ChatPopup(),
+                        //   );
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -764,7 +958,10 @@ class HomePageState extends State<HomePage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(Icons.add, size: 28),
+                      child: const Icon(
+                        Icons.add,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),

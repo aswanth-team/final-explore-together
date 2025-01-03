@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../login_screen.dart';
+import '../../../utils/app_theme.dart';
 import 'add_admin_page.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -18,8 +20,14 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      backgroundColor: appTheme.primaryColor,
+      appBar: AppBar(
+        title: Text('Settings', style: TextStyle(color: appTheme.textColor)),
+        backgroundColor: appTheme.secondaryColor,
+      ),
       body: ListView(
         children: [
           ListTile(
@@ -36,6 +44,39 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.color_lens, color: Colors.green),
+            title: Row(
+              children: [
+                Text(
+                  'Theme',
+                  style: TextStyle(color: appTheme.textColor),
+                ),
+                SizedBox(width: 50),
+                DropdownButton<AppThemeMode>(
+                  value: themeManager.appThemeMode,
+                  focusColor: appTheme.secondaryColor,
+                  items: AppThemeMode.values.map((mode) {
+                    return DropdownMenuItem(
+                      value: mode,
+                      child: Text(
+                        mode.toString().split('.').last,
+                        style: TextStyle(color: appTheme.textColor),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (newMode) async {
+                    if (newMode != null) {
+                      await themeManager.setThemeMode(newMode);
+                    }
+                  },
+                  dropdownColor: appTheme.secondaryColor,
+                ),
+              ],
+            ),
+          ),
+          Divider(),
+          SizedBox(height: 10),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text(

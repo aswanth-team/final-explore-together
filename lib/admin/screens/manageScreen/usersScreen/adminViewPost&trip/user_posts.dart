@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../../services/post/firebase_post.dart';
+import '../../../../../utils/app_theme.dart';
 import '../../../../../utils/dialogues.dart';
+import '../../../../../utils/image_swipe.dart';
 import '../../../../../utils/loading.dart';
 import 'post_detail_screen.dart';
 
@@ -44,10 +47,8 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                     titleIcon:
                         const Icon(Icons.delete_forever, color: Colors.red),
                     titleColor: Colors.redAccent,
-                    messageColor: Colors.black87,
                     cancelButtonColor: Colors.blue,
                     confirmButtonColor: Colors.red,
-                    backgroundColor: Colors.white,
                     subMessage:
                         'This action is irreversible. The post will be permanently deleted.',
                   );
@@ -62,6 +63,8 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _userPostServices.fetchUserPosts(userId: widget.userId),
       builder: (context, snapshot) {
@@ -118,31 +121,28 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                           decoration: BoxDecoration(
                             color: (post['tripCompleted'] ?? false)
                                 ? Colors.green[100]
-                                : Colors.white,
-                            border: Border.all(color: Colors.grey, width: 0.5),
+                                : appTheme.secondaryColor,
+                            border: Border.all(
+                                color: appTheme.secondaryTextColor, width: 0.5),
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color.fromARGB(255, 138, 222, 255)
-                                    .withOpacity(0.1),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  post['locationImages']?.isNotEmpty == true
-                                      ? post['locationImages'][0]
-                                      : 'https://res.cloudinary.com/dakew8wni/image/upload/v1734019072/public/postimages/mwtjtugc4ppu02vwiv49.png',
-                                  fit: BoxFit.cover,
+                                child: SizedBox(
                                   height: 100,
                                   width: double.infinity,
+                                  child: ImageCarousel(
+                                    locationImages:
+                                        post['locationImages']?.isNotEmpty ==
+                                                true
+                                            ? post['locationImages']
+                                            : [
+                                                'https://res.cloudinary.com/dakew8wni/image/upload/v1734019072/public/postimages/mwtjtugc4ppu02vwiv49.png',
+                                              ],
+                                  ),
                                 ),
                               ),
                               Padding(
@@ -150,13 +150,11 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                                 child: Center(
                                   child: Text(
                                     post['locationName'] ?? 'Unknown Location',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
-                                      color:
-                                          Colors.black, // Ensuring color is set
-                                      height:
-                                          1.2, // Adjust line height to control spacing
+                                      color: appTheme.textColor,
+                                      height: 1.2,
                                     ),
                                   ),
                                 ),

@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final themeManager = ThemeManager();
-  await themeManager.loadTheme(); // Load saved theme
+  await themeManager.loadTheme(); 
 
   runApp(
     ChangeNotifierProvider(

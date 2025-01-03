@@ -58,10 +58,8 @@ class AccountManagementPage extends StatelessWidget {
       },
       titleIcon: const Icon(Icons.lock_reset, color: Colors.red),
       titleColor: Colors.redAccent,
-      messageColor: Colors.black87,
       cancelButtonColor: Colors.blue,
       confirmButtonColor: Colors.red,
-      backgroundColor: Colors.white,
     );
   }
 

@@ -224,13 +224,9 @@ class ProfilePageState extends State<ProfilePage> {
                                         child: ClipRRect(
                                           borderRadius:
                                               BorderRadius.circular(8.0),
-                                          child: CachedNetworkImage(
-                                            imageUrl: userImage,
-                                            placeholder: (context, url) =>
-                                                const LoadingAnimation(),
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    const Icon(Icons.error),
+                                          child: Image(
+                                            image: CachedNetworkImageProvider(
+                                                userImage),
                                             fit: BoxFit.cover,
                                           ),
                                         ),

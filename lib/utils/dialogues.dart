@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'app_theme.dart';
 
 Future<void> showConfirmationDialog({
   required BuildContext context,
@@ -9,17 +12,17 @@ Future<void> showConfirmationDialog({
   required Function onConfirm,
   required Icon titleIcon,
   Color titleColor = Colors.redAccent,
-  Color messageColor = Colors.black87,
   Color cancelButtonColor = Colors.blue,
   Color confirmButtonColor = Colors.redAccent,
-  Color backgroundColor = Colors.white,
   String? subMessage,
 }) {
   return showDialog(
     context: context,
     builder: (BuildContext context) {
+      final themeManager = Provider.of<ThemeManager>(context, listen: false);
+      final appTheme = themeManager.currentTheme;
       return AlertDialog(
-        backgroundColor: backgroundColor,
+        backgroundColor: appTheme.secondaryColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
@@ -44,16 +47,16 @@ Future<void> showConfirmationDialog({
               message,
               style: TextStyle(
                 fontSize: 16,
-                color: messageColor,
+                color: appTheme.textColor,
               ),
             ),
             const SizedBox(height: 10),
             if (subMessage != null) ...[
               Text(
                 subMessage,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color: appTheme.secondaryTextColor,
                 ),
               ),
             ],
@@ -108,10 +111,8 @@ Future<void> showConfirmationDialog({
   },
   titleIcon: Icon(Icons.delete_forever, color: Colors.red), // Custom icon
   titleColor: Colors.redAccent,
-  messageColor: Colors.black87,
   cancelButtonColor: Colors.blue,
   confirmButtonColor: Colors.red,
-  backgroundColor: Colors.white,
   subMessage: 'This action cannot be undone.', // Custom sub message
 );
  */
@@ -120,9 +121,12 @@ Future<void> showPlaceDialog({
   required BuildContext context,
   required String placeName,
 }) {
+  final themeManager = Provider.of<ThemeManager>(context, listen: false);
+  final appTheme = themeManager.currentTheme;
   return showDialog(
     context: context,
     builder: (context) => Dialog(
+      backgroundColor: appTheme.secondaryColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.0),
       ),
@@ -139,10 +143,10 @@ Future<void> showPlaceDialog({
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close,
                       size: 24,
-                      color: Colors.black,
+                      color: appTheme.secondaryTextColor,
                     ),
                   ),
                 ],
@@ -150,10 +154,10 @@ Future<void> showPlaceDialog({
             ),
             Text(
               placeName,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-              ),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                  color: appTheme.textColor),
               textAlign: TextAlign.center,
             ),
           ],

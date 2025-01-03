@@ -2,9 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'dart:io';
 
 import '../../../../services/cloudinary_upload.dart';
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/loading.dart';
 
 class PackageEditScreen extends StatefulWidget {
@@ -167,6 +169,8 @@ class PackageEditScreenState extends State<PackageEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: LoadingAnimation()),
@@ -174,11 +178,16 @@ class PackageEditScreenState extends State<PackageEditScreen> {
     }
 
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Edit Package'),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Edit Package',
+          style: TextStyle(color: appTheme.textColor),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.save),
+            icon: const Icon(Icons.save, color: Colors.blue),
             onPressed: _saveChanges,
           ),
         ],
@@ -202,10 +211,15 @@ class PackageEditScreenState extends State<PackageEditScreen> {
                         height: 200,
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
+                          border:
+                              Border.all(color: appTheme.secondaryTextColor),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.add_photo_alternate, size: 40),
+                        child: Icon(
+                          Icons.add_photo_alternate,
+                          size: 40,
+                          color: appTheme.secondaryTextColor,
+                        ),
                       ),
                     );
                   }
@@ -231,11 +245,15 @@ class PackageEditScreenState extends State<PackageEditScreen> {
                           onTap: () => _removeImage(index),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
+                            decoration: BoxDecoration(
+                              color: appTheme.primaryColor,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.close, size: 20),
+                            child: Icon(
+                              Icons.close,
+                              size: 20,
+                              color: appTheme.textColor,
+                            ),
                           ),
                         ),
                       ),
@@ -247,10 +265,12 @@ class PackageEditScreenState extends State<PackageEditScreen> {
             const SizedBox(height: 24),
             TextField(
               controller: _locationNameController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Location Name',
+                hintStyle: TextStyle(color: appTheme.secondaryTextColor),
                 border: OutlineInputBorder(),
               ),
+              style: TextStyle(color: appTheme.textColor),
             ),
             const SizedBox(height: 16),
             TextField(

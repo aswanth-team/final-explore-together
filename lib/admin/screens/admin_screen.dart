@@ -18,7 +18,7 @@ class AdminScreenState extends State<AdminScreen> {
   final List<Widget> _pages = [
     const SentMessagePage(),
     const UserAndAgencyScreen(),
-    const AnalysisPage(),
+    const SettingsPage(),
     const TopNavigationScreen(),
     const SettingsPage(),
   ];
@@ -34,7 +34,7 @@ class AdminScreenState extends State<AdminScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _selectedIndex, // Keeps the selected page in memory
+        index: _selectedIndex,
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(

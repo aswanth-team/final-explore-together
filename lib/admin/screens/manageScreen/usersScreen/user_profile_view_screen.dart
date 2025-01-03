@@ -2,12 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../services/one_signal.dart';
 import '../../../../user/screens/BuddyScreen/buddies_screen.dart';
 import '../../../../user/screens/BuddyScreen/buddying_screen.dart';
 import '../../../../user/screens/profileScreen/post&trip/current_user_tripimage.dart';
 import '../../../../utils/app_colors.dart';
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/counder.dart';
 import '../../../../utils/dialogues.dart';
 import '../../../../utils/loading.dart';
@@ -69,10 +71,8 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
           ? const Icon(Icons.delete_forever, color: Colors.red)
           : const Icon(Icons.add, color: Colors.green),
       titleColor: isRemoved ? Colors.redAccent : Colors.greenAccent,
-      messageColor: Colors.black87,
       cancelButtonColor: Colors.blue,
       confirmButtonColor: isRemoved ? Colors.red : Colors.green,
-      backgroundColor: Colors.white,
     );
   }
 
@@ -138,9 +138,17 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
+
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Profile..'),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Profile..',
+          style: TextStyle(color: appTheme.textColor),
+        ),
       ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
@@ -198,13 +206,9 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                         child: ClipRRect(
                                           borderRadius:
                                               BorderRadius.circular(8.0),
-                                          child: CachedNetworkImage(
-                                            imageUrl: userImage,
-                                            placeholder: (context, url) =>
-                                                const LoadingAnimation(),
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    const Icon(Icons.error),
+                                          child: Image(
+                                            image: CachedNetworkImageProvider(
+                                                userImage),
                                             fit: BoxFit.cover,
                                           ),
                                         ),
@@ -217,7 +221,7 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                           },
                           child: Container(
                             width: 60,
-                            height: 0,
+                            height: 60,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
@@ -262,17 +266,17 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                         children: [
                                           Text(
                                             formatCount(buddiesCount),
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: appTheme.textColor),
                                           ),
-                                          const Text(
+                                          Text(
                                             'Buddies',
                                             style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.normal,
-                                            ),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.normal,
+                                                color: appTheme.textColor),
                                           ),
                                         ],
                                       ),
@@ -300,17 +304,17 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                         children: [
                                           Text(
                                             formatCount(buddyingCount),
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: appTheme.textColor),
                                           ),
-                                          const Text(
+                                          Text(
                                             'Buddying',
                                             style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.normal,
-                                            ),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.normal,
+                                                color: appTheme.textColor),
                                           ),
                                         ],
                                       ),
@@ -324,17 +328,17 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                     children: [
                                       Text(
                                         formatCount(totalPosts),
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: appTheme.textColor),
                                       ),
-                                      const Text(
+                                      Text(
                                         'Posts',
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.normal,
-                                        ),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.normal,
+                                            color: appTheme.textColor),
                                       ),
                                     ],
                                   ),
@@ -346,17 +350,17 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                     children: [
                                       Text(
                                         formatCount(completedPosts),
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: appTheme.textColor),
                                       ),
-                                      const Text(
+                                      Text(
                                         'Completed',
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.normal,
-                                        ),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.normal,
+                                            color: appTheme.textColor),
                                       ),
                                     ],
                                   ),
@@ -375,16 +379,23 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                       children: [
                         Text(
                           profileData['fullname'],
-                          style: const TextStyle(
-                              fontSize: 17, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: appTheme.textColor),
                         ),
                         const SizedBox(height: 8),
-                        //  Text('DOB: ${profileData['dob']}'),
-                        // const SizedBox(height: 8),
-                        // Text('Gender: ${profileData['gender']}'),
-                        // const SizedBox(height: 16),
+                        Text(
+                          'DOB: ${profileData['dob']}',
+                          style: TextStyle(color: appTheme.textColor),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Gender: ${profileData['gender']}',
+                            style: TextStyle(color: appTheme.textColor)),
+                        const SizedBox(height: 8),
                         Text(profileData['userbio'] ?? '',
-                            style: const TextStyle(fontSize: 12)),
+                            style: TextStyle(
+                                fontSize: 12, color: appTheme.textColor)),
                       ],
                     ),
                   ),
@@ -406,25 +417,21 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                         ),
                       if ((profileData['instagram']?.isNotEmpty ?? false))
                         const SizedBox(width: 6),
-
-                      // Twitter (X) Icon
                       if ((profileData['x']?.isNotEmpty ?? false))
                         IconButton(
                           onPressed: () {
                             final twitterLink = profileData['x'];
                             launchUrl(Uri.parse(twitterLink));
                           },
-                          icon: const FaIcon(
+                          icon: FaIcon(
                             FontAwesomeIcons.x,
-                            color: Color.fromARGB(255, 0, 0, 0),
+                            color: appTheme.textColor,
                             size: 15,
                           ),
                           tooltip: 'X',
                         ),
                       if ((profileData['x']?.isNotEmpty ?? false))
                         const SizedBox(width: 6),
-
-                      // Facebook Icon
                       if ((profileData['facebook']?.isNotEmpty ?? false))
                         IconButton(
                           onPressed: () {
@@ -469,16 +476,13 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                   },
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: Colors.white,
-                                    backgroundColor: Colors
-                                        .greenAccent, // Set background color to white
+                                    backgroundColor: Colors.greenAccent,
                                     side: const BorderSide(
                                       color: Colors.black,
-                                      width:
-                                          0.3, // Decreased the border width to 1
+                                      width: 0.3,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          5), // Decreased border radius
+                                      borderRadius: BorderRadius.circular(5),
                                     ),
                                   ),
                                   child: const Text("Notify"),
@@ -501,25 +505,22 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                   },
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: Colors.white,
-                                    backgroundColor: (profileData[
-                                                'isRemoved'] ??
-                                            false)
-                                        ? Colors.greenAccent
-                                        : Colors
-                                            .redAccent, // Change color dynamically
+                                    backgroundColor:
+                                        (profileData['isRemoved'] ?? false)
+                                            ? Colors.greenAccent
+                                            : Colors.redAccent,
                                     side: const BorderSide(
                                       color: Colors.black,
-                                      width: 0.3, // Border width
+                                      width: 0.3,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          5), // Decreased border radius
+                                      borderRadius: BorderRadius.circular(5),
                                     ),
                                   ),
                                   child: Text(
                                     (profileData['isRemoved'] ?? false)
                                         ? "Add"
-                                        : "Remove", // Dynamic button text
+                                        : "Remove",
                                     style: const TextStyle(
                                         fontWeight: FontWeight.bold),
                                   ),
@@ -544,13 +545,13 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                   showPosts = true;
                                 });
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.grid_on,
-                                color: Colors.black,
+                                color: appTheme.textColor,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Posts',
-                                style: TextStyle(color: Colors.black),
+                                style: TextStyle(color: appTheme.textColor),
                               ),
                             ),
                             if (showPosts)
@@ -570,20 +571,20 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                   showPosts = false;
                                 });
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.photo_album,
-                                color: Colors.black,
+                                color: appTheme.textColor,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Trip Images',
-                                style: TextStyle(color: Colors.black),
+                                style: TextStyle(color: appTheme.textColor),
                               ),
                             ),
                             if (!showPosts)
                               Container(
                                 height: 2,
                                 width: 50,
-                                color: Colors.black,
+                                color: Colors.blue,
                               ),
                           ],
                         ),
