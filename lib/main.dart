@@ -5,16 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 //import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:provider/provider.dart';
 import 'admin/screens/admin_screen.dart';
 import 'firebase_options.dart';
 import 'login_screen.dart';
 import 'user/screens/user_screen.dart';
+import 'utils/app_theme.dart';
 
 const apiKey = 'AIzaSyAwjcN3Aei78CJ6YP2Ok-W47i-Z_5k_5EE';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   //WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+
+  final themeManager = ThemeManager();
+  await themeManager.loadTheme();
 
   //FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
@@ -56,9 +61,25 @@ Future<void> main() async {
   }
 
   //FlutterNativeSplash.remove();
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => themeManager,
+      child: MyApp(home: home),
+    ),
+  );
+}
 
-  runApp(MaterialApp(
-    home: home,
-    debugShowCheckedModeBanner: false,
-  ));
+class MyApp extends StatelessWidget {
+  final Widget home;
+  const MyApp({super.key, required this.home});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    return MaterialApp(
+      themeMode: themeManager.themeMode,
+      home: home,
+      debugShowCheckedModeBanner: false,
+    );
+  }
 }
