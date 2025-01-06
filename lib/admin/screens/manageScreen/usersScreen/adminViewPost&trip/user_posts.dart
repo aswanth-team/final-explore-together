@@ -22,7 +22,10 @@ class UserPostsWidget extends StatefulWidget {
 class UserPostsWidgetState extends State<UserPostsWidget> {
   final UserPostServices _userPostServices = UserPostServices();
   void showPostOptions(BuildContext context, Map<String, dynamic> post) {
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+    final appTheme = themeManager.currentTheme;
     showModalBottomSheet(
+      backgroundColor: appTheme.secondaryColor,
       context: context,
       builder: (context) {
         return SafeArea(
@@ -30,8 +33,14 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.delete_outline),
-                title: const Text('Delete'),
+                leading: Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                ),
+                title: Text(
+                  'Delete',
+                  style: TextStyle(color: appTheme.textColor),
+                ),
                 onTap: () {
                   showConfirmationDialog(
                     context: context,
@@ -119,11 +128,10 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: (post['tripCompleted'] ?? false)
-                                ? Colors.green[100]
-                                : appTheme.secondaryColor,
+                            color: appTheme.secondaryColor,
                             border: Border.all(
-                                color: appTheme.secondaryTextColor, width: 0.5),
+                                color: appTheme.secondaryTextColor,
+                                width: 0.05),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -147,16 +155,45 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Center(
-                                  child: Text(
-                                    post['locationName'] ?? 'Unknown Location',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: appTheme.textColor,
-                                      height: 1.2,
+                                child: Column(
+                                  children: [
+                                    Center(
+                                      child: Text(
+                                        post['locationName'] != null &&
+                                                post['locationName']!.length > 8
+                                            ? '${post['locationName']!.substring(0, 14)}...'
+                                            : post['locationName'] ?? 'Unknown',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: appTheme.textColor,
+                                          height: 1.2,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    if (post['tripCompleted'] ?? false)
+                                      Center(
+                                        child: Container(
+                                          margin:
+                                              const EdgeInsets.only(top: 4.0),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 4, vertical: 1.0),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green[300],
+                                            borderRadius:
+                                                BorderRadius.circular(8.0),
+                                          ),
+                                          child: Text(
+                                            'Completed',
+                                            style: TextStyle(
+                                              fontSize: 6,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ],

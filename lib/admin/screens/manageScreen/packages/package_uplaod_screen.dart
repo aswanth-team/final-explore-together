@@ -2,9 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'dart:io';
 
 import '../../../../services/cloudinary_upload.dart';
+import '../../../../utils/app_theme.dart';
+import '../../../../utils/dialogues.dart';
 import '../../../../utils/loading.dart';
 
 class PackageUploader extends StatefulWidget {
@@ -156,6 +159,8 @@ class PackageUploaderState extends State<PackageUploader> {
   }
 
   Widget _imagePickerWidget() {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return SizedBox(
       height: 200,
       child: _selectedImages.isEmpty
@@ -168,15 +173,16 @@ class PackageUploaderState extends State<PackageUploader> {
                     border: Border.all(color: Colors.grey),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Column(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_photo_alternate, size: 40),
+                      Icon(Icons.add_photo_alternate,
+                          size: 40, color: appTheme.textColor),
                       SizedBox(height: 8),
                       Text(
                         'Add Images\n(max 3)',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: appTheme.secondaryTextColor),
                       ),
                     ],
                   ),
@@ -198,23 +204,26 @@ class PackageUploaderState extends State<PackageUploader> {
                         border: Border.all(color: Colors.grey),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Column(
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_photo_alternate, size: 40),
+                          Icon(
+                            Icons.add_photo_alternate,
+                            size: 40,
+                            color: appTheme.textColor,
+                          ),
                           SizedBox(height: 8),
                           Text(
                             'Add Images\n(max 3)',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
+                            style:
+                                TextStyle(color: appTheme.secondaryTextColor),
                           ),
                         ],
                       ),
                     ),
                   );
                 }
-
-                // Image preview
                 return Stack(
                   children: [
                     Container(
@@ -259,7 +268,10 @@ class PackageUploaderState extends State<PackageUploader> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       body: Stack(
         children: [
           Center(
@@ -279,19 +291,17 @@ class PackageUploaderState extends State<PackageUploader> {
                       child: TextFormField(
                         decoration: InputDecoration(
                           labelText: 'Location Name',
+                          labelStyle:
+                              TextStyle(color: appTheme.secondaryTextColor),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                          ),
-                          labelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.black54,
                           ),
                         ),
                         validator: (value) => value == null || value.isEmpty
                             ? 'Enter location name'
                             : null,
                         onSaved: (value) => _locationName = value,
+                        style: TextStyle(color: appTheme.textColor),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -304,16 +314,14 @@ class PackageUploaderState extends State<PackageUploader> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          labelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.black54,
-                          ),
+                          labelStyle:
+                              TextStyle(color: appTheme.secondaryTextColor),
                         ),
                         validator: (value) => value == null || value.isEmpty
                             ? 'Enter contact number'
                             : null,
                         onSaved: (value) => _phoneNumber = value,
+                        style: TextStyle(color: appTheme.textColor),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -326,11 +334,8 @@ class PackageUploaderState extends State<PackageUploader> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          labelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.black54,
-                          ),
+                          labelStyle:
+                              TextStyle(color: appTheme.secondaryTextColor),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -345,6 +350,7 @@ class PackageUploaderState extends State<PackageUploader> {
                         onSaved: (value) {
                           _prize = int.tryParse(value!);
                         },
+                        style: TextStyle(color: appTheme.textColor),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -356,16 +362,14 @@ class PackageUploaderState extends State<PackageUploader> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          labelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.black54,
-                          ),
+                          labelStyle:
+                              TextStyle(color: appTheme.secondaryTextColor),
                         ),
                         validator: (value) => value == null || value.isEmpty
                             ? 'Enter location description'
                             : null,
                         onSaved: (value) => _locationDescription = value,
+                        style: TextStyle(color: appTheme.textColor),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -378,11 +382,8 @@ class PackageUploaderState extends State<PackageUploader> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          labelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.black54,
-                          ),
+                          labelStyle:
+                              TextStyle(color: appTheme.secondaryTextColor),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -397,6 +398,7 @@ class PackageUploaderState extends State<PackageUploader> {
                         onSaved: (value) {
                           _tripDuration = int.tryParse(value!);
                         },
+                        style: TextStyle(color: appTheme.textColor),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -405,21 +407,18 @@ class PackageUploaderState extends State<PackageUploader> {
                       child: TextFormField(
                         controller: _tagController,
                         decoration: InputDecoration(
-                          labelText: 'Plan to Visit (Enter tags)',
+                          labelText: 'Plan to Visit Places',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                           suffixIcon: IconButton(
-                            icon: const Icon(Icons.add),
+                            icon: Icon(Icons.add, color: appTheme.textColor),
                             onPressed: _tags.length < 8
                                 ? () => _addTag(_tagController.text)
                                 : null,
                           ),
-                          labelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.black54,
-                          ),
+                          labelStyle:
+                              TextStyle(color: appTheme.secondaryTextColor),
                         ),
                         onChanged: (value) {
                           if (_tags.length < 8 &&
@@ -430,25 +429,70 @@ class PackageUploaderState extends State<PackageUploader> {
                         onFieldSubmitted: (value) =>
                             _tags.length < 8 ? _addTag(value) : null,
                         enabled: _tags.length < 8,
+                        style: TextStyle(color: appTheme.textColor),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    if (_tags.isNotEmpty)
-                      Wrap(
-                        spacing: 8.0,
-                        children: _tags.map((tag) {
-                          return Chip(
-                            label: Text(tag),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            backgroundColor: Colors.grey[200],
-                            labelStyle: const TextStyle(color: Colors.black),
-                            onDeleted: () => _removeTag(tag),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          );
-                        }).toList(),
+                    Container(
+                      height: 200,
+                      width: 350,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      padding: EdgeInsets.all(4),
+                      child: SingleChildScrollView(
+                        child: Wrap(
+                          spacing: 12.0,
+                          runSpacing: 12.0,
+                          children: _tags.map((tag) {
+                            return GestureDetector(
+                              onTap: () {
+                                showPlaceDialog(
+                                    context: context, placeName: tag);
+                              },
+                              child: Container(
+                                constraints: BoxConstraints(maxWidth: 150),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: appTheme.secondaryColor,
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        tag,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: appTheme.textColor,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    GestureDetector(
+                                      onTap: () => _removeTag(tag),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 20,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -459,6 +503,7 @@ class PackageUploaderState extends State<PackageUploader> {
         ],
       ),
       bottomNavigationBar: BottomAppBar(
+        color: appTheme.primaryColor,
         child: Padding(
           padding: const EdgeInsets.all(2.0),
           child: Row(

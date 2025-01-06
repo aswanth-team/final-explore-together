@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../utils/app_theme.dart';
 
 class FeedbackPopup extends StatefulWidget {
+  const FeedbackPopup({super.key});
+
   @override
-  _FeedbackPopupState createState() => _FeedbackPopupState();
+  FeedbackPopupState createState() => FeedbackPopupState();
 }
 
-class _FeedbackPopupState extends State<FeedbackPopup> {
+class FeedbackPopupState extends State<FeedbackPopup> {
   final _descriptionController = TextEditingController();
   double _rating = 0.0;
   bool _isLoading = false; // Track loading state
@@ -55,12 +60,17 @@ class _FeedbackPopupState extends State<FeedbackPopup> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+    final appTheme = themeManager.currentTheme;
     return AlertDialog(
-      title: Text('Submit Feedback'),
+      backgroundColor: appTheme.primaryColor,
+      title: Text(
+        'Submit Feedback',
+        style: TextStyle(color: Colors.amber),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Rating bar
           RatingBar.builder(
             initialRating: _rating,
             minRating: 1,
@@ -75,15 +85,17 @@ class _FeedbackPopupState extends State<FeedbackPopup> {
             },
           ),
           SizedBox(height: 20),
-          // Description text field
           TextField(
             controller: _descriptionController,
             maxLines: 4,
             decoration: InputDecoration(
               labelText: 'Description',
-              hintText: 'Write your feedback here...',
-              border: OutlineInputBorder(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              labelStyle: TextStyle(color: appTheme.secondaryTextColor),
             ),
+            style: TextStyle(color: appTheme.textColor),
           ),
           if (_isLoading) // Show loading animation when submitting
             Padding(
@@ -97,13 +109,13 @@ class _FeedbackPopupState extends State<FeedbackPopup> {
           onPressed: () {
             Navigator.of(context).pop(); // Close the pop-up
           },
-          child: Text('Cancel'),
+          child: Text('Cancel', style: TextStyle(color: Colors.red)),
         ),
         TextButton(
           onPressed: _isLoading
               ? null
               : _submitFeedback, // Disable button while loading
-          child: Text('Submit'),
+          child: Text('Submit', style: TextStyle(color: Colors.green)),
         ),
       ],
     );

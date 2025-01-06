@@ -45,7 +45,21 @@ class SettingsPage extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.color_lens, color: Colors.green),
+            leading: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [
+                  Colors.red,
+                  Colors.orange,
+                  Colors.yellow,
+                  Colors.green,
+                  Colors.blue,
+                  Colors.indigo,
+                  Colors.purple,
+                ],
+                tileMode: TileMode.mirror,
+              ).createShader(bounds),
+              child: Icon(Icons.color_lens, color: Colors.white),
+            ),
             title: Row(
               children: [
                 Text(

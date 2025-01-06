@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/loading.dart';
 
 class FeedbackPage extends StatelessWidget {
@@ -7,7 +9,10 @@ class FeedbackPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       body: StreamBuilder(
         stream: FirebaseFirestore.instance.collection('feedback').snapshots(),
         builder: (context, snapshot) {
@@ -56,15 +61,23 @@ class FeedbackTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) {
+        final themeManager = Provider.of<ThemeManager>(context);
+        final appTheme = themeManager.currentTheme;
         return AlertDialog(
-          title: const Text('Feedback Details'),
+          backgroundColor: appTheme.secondaryColor,
+          title: Text(
+            'Feedback Details',
+            style: TextStyle(color: appTheme.textColor),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Rating:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: appTheme.secondaryTextColor),
               ),
               Row(
                 children: List.generate(
@@ -76,11 +89,16 @@ class FeedbackTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Description:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: appTheme.secondaryTextColor),
               ),
-              Text(description),
+              Text(
+                description,
+                style: TextStyle(color: appTheme.textColor),
+              ),
             ],
           ),
           actions: [
@@ -98,6 +116,8 @@ class FeedbackTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return FutureBuilder(
       future: _fetchUserData(feedback['sender']),
       builder: (context, snapshot) {
@@ -113,12 +133,15 @@ class FeedbackTile extends StatelessWidget {
                   backgroundImage: NetworkImage(userData['userimage']),
                 )
               : const CircleAvatar(child: Icon(Icons.person)),
-          title: Text(userData['username'] ?? 'Unknown User'),
-          subtitle: Text(
-            feedback['description'].toString().length > 30
-                ? '${feedback['description'].toString().substring(0, 30)}...'
-                : feedback['description'].toString(),
+          title: Text(
+            userData['username'] ?? 'Unknown User',
+            style: TextStyle(color: appTheme.textColor),
           ),
+          subtitle: Text(
+              feedback['description'].toString().length > 30
+                  ? '${feedback['description'].toString().substring(0, 30)}...'
+                  : feedback['description'].toString(),
+              style: TextStyle(color: appTheme.secondaryTextColor)),
           onTap: () {
             _showFeedbackPopup(
               context,

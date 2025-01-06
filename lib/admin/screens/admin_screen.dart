@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../utils/app_theme.dart';
 import 'analysisScreen/analysis_screen.dart';
 import 'manageScreen/user_packages_agencies.dart';
 import 'messageScreen/sent_message_screen.dart';
-import 'reportAndFeedBack/report_&_feedback_nav_screen.dart';
+import 'reportAndFeedBack/report_and_feedback_screen.dart';
 import 'settingsScreen/setting_screen.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -18,7 +20,7 @@ class AdminScreenState extends State<AdminScreen> {
   final List<Widget> _pages = [
     const SentMessagePage(),
     const UserAndAgencyScreen(),
-    const SettingsPage(),
+    const AnalysisPage(),
     const TopNavigationScreen(),
     const SettingsPage(),
   ];
@@ -32,12 +34,15 @@ class AdminScreenState extends State<AdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: appTheme.secondaryColor,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         iconSize: 20,
@@ -67,7 +72,7 @@ class AdminScreenState extends State<AdminScreen> {
           ),
         ],
         selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: appTheme.textColor,
         type: BottomNavigationBarType.fixed,
       ),
     );

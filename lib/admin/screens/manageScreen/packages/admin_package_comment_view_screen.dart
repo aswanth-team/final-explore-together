@@ -163,7 +163,10 @@ class AdminViewPackageCommentSheetState
                         backgroundImage:
                             CachedNetworkImageProvider(comment['userimage']),
                       ),
-                      title: Text(comment['username']),
+                      title: Text(
+                        comment['username'],
+                        style: TextStyle(color: appTheme.textColor),
+                      ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

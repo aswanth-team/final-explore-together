@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/loading.dart';
 import '../manageScreen/usersScreen/user_profile_view_screen.dart';
 
@@ -17,7 +19,10 @@ class ReportsPageState extends State<ReportsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       body: Column(
         children: [
           SizedBox(
@@ -39,13 +44,13 @@ class ReportsPageState extends State<ReportsPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16.0, vertical: 8.0),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue : Colors.grey[200],
+                      color: isSelected ? Colors.blue : appTheme.secondaryColor,
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
                       category,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -61,18 +66,13 @@ class ReportsPageState extends State<ReportsPage> {
                   .where('isChecked', isEqualTo: selectedCategory == "Checked")
                   .snapshots(),
               builder: (context, snapshot) {
-                // Show loading spinner while data is being fetched
                 if (!snapshot.hasData) {
-                  return Center(child: CircularProgressIndicator());
+                  return Center(child: LoadingAnimation());
                 }
-
                 final reports = snapshot.data!.docs;
-
-                // If no reports are found, show a message
                 if (reports.isEmpty) {
                   return const Center(child: Text("No reports found."));
                 }
-
                 return ListView.builder(
                   itemCount: reports.length,
                   itemBuilder: (context, index) {
@@ -97,7 +97,16 @@ class ReportsPageState extends State<ReportsPage> {
                                 : AssetImage('assets/default_avatar.png')
                                     as ImageProvider,
                           ),
-                          title: Text(userData['username']),
+                          title: Text(
+                            userData['username'],
+                            style: TextStyle(color: appTheme.textColor),
+                          ),
+                          subtitle: Text(
+                              report['description'].toString().length > 20
+                                  ? '${report['description'].toString().substring(0, 20)}...'
+                                  : report['description'].toString(),
+                              style: TextStyle(
+                                  color: appTheme.secondaryTextColor)),
                           onTap: () {
                             Navigator.push(
                               context,
@@ -125,19 +134,22 @@ class ReportsPageState extends State<ReportsPage> {
 class ReportDetailsPage extends StatefulWidget {
   final String reportId;
 
-  ReportDetailsPage({required this.reportId});
+  const ReportDetailsPage({super.key, required this.reportId});
 
   @override
-  _ReportDetailsPageState createState() => _ReportDetailsPageState();
+  ReportDetailsPageState createState() => ReportDetailsPageState();
 }
 
-class _ReportDetailsPageState extends State<ReportDetailsPage> {
+class ReportDetailsPageState extends State<ReportDetailsPage> {
   bool _isLoading = false;
   bool _isChecked = false; // Track the checked state
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
         title: Text("Report Details"),
       ),
@@ -148,7 +160,7 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
             .get(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
+            return Center(child: LoadingAnimation());
           }
 
           final reportData = snapshot.data!;
@@ -179,33 +191,18 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                               children: [
                                 Text(
                                   "Reported Time:",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: appTheme.textColor),
                                 ),
                                 Text(
                                   formattedReportedTime,
-                                  style: TextStyle(color: Colors.grey[700]),
+                                  style: TextStyle(
+                                      color: appTheme.secondaryTextColor),
                                 ),
                               ],
                             ),
-                            SizedBox(
-                              height: 30,
-                            ),
-                            Center(
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  reportData['description'],
-                                  style: TextStyle(fontSize: 16),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 20),
+                            SizedBox(height: 40),
                             FutureBuilder<List<DocumentSnapshot>>(
                               future: Future.wait([
                                 FirebaseFirestore.instance
@@ -219,8 +216,7 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                               ]),
                               builder: (context, usersSnapshot) {
                                 if (!usersSnapshot.hasData) {
-                                  return Center(
-                                      child: CircularProgressIndicator());
+                                  return Center(child: LoadingAnimation());
                                 }
 
                                 final reportingUser = usersSnapshot.data![0];
@@ -249,7 +245,11 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                                                 reportingUser['userimage']),
                                           ),
                                           SizedBox(height: 8),
-                                          Text(reportingUser['username']),
+                                          Text(
+                                            reportingUser['username'],
+                                            style: TextStyle(
+                                                color: appTheme.textColor),
+                                          ),
                                           SizedBox(height: 4),
                                           Text(
                                             "Reporting",
@@ -279,7 +279,11 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                                                 reportedUser['userimage']),
                                           ),
                                           SizedBox(height: 8),
-                                          Text(reportedUser['username']),
+                                          Text(
+                                            reportedUser['username'],
+                                            style: TextStyle(
+                                                color: appTheme.textColor),
+                                          ),
                                           SizedBox(height: 4),
                                           Text(
                                             "Reported",
@@ -294,6 +298,25 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                                   ],
                                 );
                               },
+                            ),
+                            SizedBox(
+                              height: 20,
+                            ),
+                            Center(
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  reportData['description'],
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.white),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
                             ),
                           ],
                         ),

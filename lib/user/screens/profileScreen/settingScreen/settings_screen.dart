@@ -2,8 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../login_screen.dart';
+import '../../../../utils/app_theme.dart';
 import '../../chat_&_group/chatScreen/chat_utils.dart';
 import 'accoundManagement/account_management_screen.dart';
 import 'feedback_popup.dart';
@@ -23,37 +25,30 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      backgroundColor: appTheme.primaryColor,
+      appBar: AppBar(
+        title: Text('Settings', style: TextStyle(color: appTheme.textColor)),
+        backgroundColor: appTheme.secondaryColor,
+      ),
       body: ListView(
         children: [
-          // Support Section
+          SizedBox(height: 30),
           ListTile(
-            leading: const Icon(Icons.support_agent),
-            title: const Text('Support'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SupportPage()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.help),
-            title: const Text('Help'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MainHelpPage()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.manage_accounts),
-            title: const Text('Account Management'),
-            trailing: const Icon(Icons.chevron_right),
+            leading: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [Colors.blue, Colors.lightBlueAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Icon(Icons.manage_accounts, color: Colors.white),
+            ),
+            title: Text('Account Management',
+                style: TextStyle(color: appTheme.textColor)),
+            trailing:
+                Icon(Icons.chevron_right, color: appTheme.secondaryTextColor),
             onTap: () {
               Navigator.push(
                 context,
@@ -63,9 +58,91 @@ class SettingsPage extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.support_agent),
-            title: const Text('Feedback'),
-            trailing: const Icon(Icons.chevron_right),
+            leading: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [
+                  Colors.red,
+                  Colors.orange,
+                  Colors.yellow,
+                  Colors.green,
+                  Colors.blue,
+                  Colors.indigo,
+                  Colors.purple,
+                ],
+                tileMode: TileMode.mirror,
+              ).createShader(bounds),
+              child: Icon(Icons.color_lens, color: Colors.white),
+            ),
+            title: Row(
+              children: [
+                Text(
+                  'Theme',
+                  style: TextStyle(color: appTheme.textColor),
+                ),
+                SizedBox(width: 50),
+                DropdownButton<AppThemeMode>(
+                  value: themeManager.appThemeMode,
+                  focusColor: appTheme.secondaryColor,
+                  items: AppThemeMode.values.map((mode) {
+                    return DropdownMenuItem(
+                      value: mode,
+                      child: Text(
+                        mode.toString().split('.').last,
+                        style: TextStyle(color: appTheme.textColor),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (newMode) async {
+                    if (newMode != null) {
+                      await themeManager.setThemeMode(newMode);
+                    }
+                  },
+                  dropdownColor: appTheme.secondaryColor,
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 10),
+          Divider(),
+          SizedBox(height: 10),
+          ListTile(
+            leading: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [Colors.orange, Colors.yellow],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Icon(
+                Icons.support_agent,
+                color: Colors.white,
+              ),
+            ),
+            title: Text('Support', style: TextStyle(color: appTheme.textColor)),
+            trailing:
+                Icon(Icons.chevron_right, color: appTheme.secondaryTextColor),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SupportPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [Colors.teal, Colors.lightBlueAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Icon(
+                Icons.feedback,
+                color: Colors.white,
+              ),
+            ),
+            title:
+                Text('Feedback', style: TextStyle(color: appTheme.textColor)),
+            trailing:
+                Icon(Icons.chevron_right, color: appTheme.secondaryTextColor),
             onTap: () {
               showDialog(
                 context: context,
@@ -75,6 +152,31 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
+          ListTile(
+            leading: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [Colors.blue, Colors.lightBlueAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Icon(
+                Icons.help,
+                color: Colors.white,
+              ),
+            ),
+            title: Text('Help', style: TextStyle(color: appTheme.textColor)),
+            trailing:
+                Icon(Icons.chevron_right, color: appTheme.secondaryTextColor),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MainHelpPage()),
+              );
+            },
+          ),
+          SizedBox(height: 10),
+          Divider(),
+          SizedBox(height: 50),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text(

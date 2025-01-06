@@ -1,23 +1,31 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../../../../utils/app_theme.dart';
 
 class MainHelpPage extends StatelessWidget {
   const MainHelpPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Help Center'),
-        backgroundColor: Colors.blueAccent,
-      ),
+          title:
+              Text('Help Center', style: TextStyle(color: appTheme.textColor)),
+          backgroundColor: appTheme.secondaryColor),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
           ListTile(
-            title: const Text('Login Help'),
-            trailing: const Icon(Icons.arrow_forward_ios),
+            title:
+                Text('Login Help', style: TextStyle(color: appTheme.textColor)),
+            trailing:
+                Icon(Icons.chevron_right, color: appTheme.secondaryTextColor),
             onTap: () {
               Navigator.push(
                 context,
@@ -27,10 +35,11 @@ class MainHelpPage extends StatelessWidget {
               );
             },
           ),
-          const Divider(),
           ListTile(
-            title: const Text('Recover a Removed Account'),
-            trailing: const Icon(Icons.arrow_forward_ios),
+            title: Text('Recover a Removed Account',
+                style: TextStyle(color: appTheme.textColor)),
+            trailing:
+                Icon(Icons.chevron_right, color: appTheme.secondaryTextColor),
             onTap: () {
               Navigator.push(
                 context,
@@ -40,10 +49,11 @@ class MainHelpPage extends StatelessWidget {
               );
             },
           ),
-          const Divider(),
           ListTile(
-            title: const Text('Using Explore Together'),
-            trailing: const Icon(Icons.arrow_forward_ios),
+            title: Text('Using Explore Together',
+                style: TextStyle(color: appTheme.textColor)),
+            trailing:
+                Icon(Icons.chevron_right, color: appTheme.secondaryTextColor),
             onTap: () {
               Navigator.push(
                 context,
@@ -64,29 +74,28 @@ class LoginHelpPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Login Help'),
-        backgroundColor: Colors.blueAccent,
+        title: Text(
+          'Login Help',
+          style: TextStyle(color: appTheme.textColor),
+        ),
+        backgroundColor: appTheme.secondaryColor,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
-          children: const [
-            Text(
-              'Login Help',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          children: [
             SizedBox(height: 10),
             Text(
               '1. Enter your username, email, phone, or Aadhaar in the first field.\n'
               '2. Enter your password in the second field.\n'
               '3. If you forgot your password, click on "Forgot Password?".\n'
               '4. New users can click "Signup" to register.\n',
-              style: TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: 16, color: appTheme.textColor),
             ),
           ],
         ),
@@ -98,21 +107,19 @@ class LoginHelpPage extends StatelessWidget {
 class RecoverAccountHelpPage extends StatelessWidget {
   const RecoverAccountHelpPage({super.key});
 
-  // Fetch the email from Firestore
   Future<String> fetchEmail() async {
     try {
-      // Get the app management data from Firestore
       DocumentSnapshot document = await FirebaseFirestore.instance
           .collection('Manage')
-          .doc('appData') 
+          .doc('appData')
           .get();
       if (document.exists && document['appEmail'] != null) {
         return document['appEmail'];
       } else {
-        return 'travellbuddyfinder@gmail.com@gmail.com'; 
+        return 'travellbuddyfinder@gmail.com@gmail.com';
       }
     } catch (e) {
-      return 'travellbuddyfinder@gmail.com@gmail.com'; 
+      return 'travellbuddyfinder@gmail.com@gmail.com';
     }
   }
 
@@ -125,31 +132,30 @@ class RecoverAccountHelpPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Recover Account'),
-        backgroundColor: Colors.blueAccent,
-      ),
+          title: Text('Recover Account',
+              style: TextStyle(color: appTheme.textColor)),
+          backgroundColor: appTheme.secondaryColor),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            const Text(
-              'Recover a Removed Account',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            SizedBox(
+              height: 30,
             ),
-            const SizedBox(height: 10),
-            const Text(
+            Text(
               'Accounts may be temporarily removed due to the following reasons:\n'
               '- Violation of community guidelines or policies.\n'
               '- Inactivity for a prolonged period.\n'
               '- Fraudulent or suspicious activity.\n'
               '- Incorrect or incomplete account information.\n\n'
               'If your account was removed and you believe this was a mistake, you can contact our support team to recover it. Provide all the necessary details, such as your full name, email, and username.',
-              style: TextStyle(fontSize: 16),
+              style:
+                  TextStyle(fontSize: 16, color: appTheme.secondaryTextColor),
             ),
             const SizedBox(height: 30),
             // FutureBuilder to fetch and display the email
@@ -197,22 +203,19 @@ class UsingAppHelpPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Using Explore Together'),
-        backgroundColor: Colors.blueAccent,
+        title: Text('Using Explore Together',
+            style: TextStyle(color: appTheme.textColor)),
+        backgroundColor: appTheme.secondaryColor,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
-          children: const [
-            Text(
-              'Using Explore Together',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          children: [
             SizedBox(height: 10),
             Text(
               'Explore Together is designed to connect solo travelers with others who share similar destinations and interests. Here’s how you can use it:\n\n'
@@ -221,7 +224,7 @@ class UsingAppHelpPage extends StatelessWidget {
               '- Use the in-app chat feature to connect and plan trips together.\n'
               '- Review safety tips and guidelines before meeting new people.\n\n'
               'Enjoy a secure and seamless travel experience with Explore Together.',
-              style: TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: 16, color: appTheme.textColor),
             ),
           ],
         ),

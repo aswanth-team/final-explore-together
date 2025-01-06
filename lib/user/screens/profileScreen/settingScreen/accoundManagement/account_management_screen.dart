@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../../services/user/firebase_user_auth.dart';
+import '../../../../../utils/app_theme.dart';
 import '../../../../../utils/dialogues.dart';
 import '../../edit_profile_screen.dart';
 
@@ -65,14 +67,34 @@ class AccountManagementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Account Management')),
+      backgroundColor: appTheme.primaryColor,
+      appBar: AppBar(
+        title: Text(
+          'Account Management',
+          style: TextStyle(color: appTheme.textColor),
+        ),
+        backgroundColor: appTheme.secondaryColor,
+      ),
       body: ListView(
         children: [
           ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Edit Profile'),
-            trailing: const Icon(Icons.arrow_forward),
+            leading: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [Colors.blue, Colors.lightBlueAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Icon(Icons.person, color: Colors.white),
+            ),
+            title: Text('Edit Profile',
+                style: TextStyle(color: appTheme.textColor)),
+            trailing: Icon(
+              Icons.chevron_right,
+              color: appTheme.secondaryTextColor,
+            ),
             onTap: () {
               Navigator.push(
                 context,
@@ -83,9 +105,21 @@ class AccountManagementPage extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.lock),
-            title: const Text('Change Password'),
-            trailing: const Icon(Icons.chevron_right),
+            leading: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [Colors.orange, Colors.yellow],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Icon(
+                Icons.lock,
+                color: Colors.white,
+              ),
+            ),
+            title: Text('Change Password',
+                style: TextStyle(color: appTheme.textColor)),
+            trailing:
+                Icon(Icons.chevron_right, color: appTheme.secondaryTextColor),
             onTap: () {
               _showConfirmationDialog(context);
             },

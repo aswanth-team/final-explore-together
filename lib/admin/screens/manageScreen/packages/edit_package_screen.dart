@@ -7,6 +7,7 @@ import 'dart:io';
 
 import '../../../../services/cloudinary_upload.dart';
 import '../../../../utils/app_theme.dart';
+import '../../../../utils/dialogues.dart';
 import '../../../../utils/loading.dart';
 
 class PackageEditScreen extends StatefulWidget {
@@ -266,6 +267,7 @@ class PackageEditScreenState extends State<PackageEditScreen> {
             TextField(
               controller: _locationNameController,
               decoration: InputDecoration(
+                labelStyle: TextStyle(color: appTheme.secondaryTextColor),
                 labelText: 'Location Name',
                 hintStyle: TextStyle(color: appTheme.secondaryTextColor),
                 border: OutlineInputBorder(),
@@ -275,46 +277,48 @@ class PackageEditScreenState extends State<PackageEditScreen> {
             const SizedBox(height: 16),
             TextField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Description',
+                labelStyle: TextStyle(color: appTheme.secondaryTextColor),
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
+              style: TextStyle(color: appTheme.textColor),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _phoneNoController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Contact',
+                labelStyle: TextStyle(color: appTheme.secondaryTextColor),
                 border: OutlineInputBorder(),
                 prefixText: '📞  ',
               ),
+              style: TextStyle(color: appTheme.textColor),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _prizeController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Prize',
+                labelStyle: TextStyle(color: appTheme.secondaryTextColor),
                 border: OutlineInputBorder(),
                 prefixText: '₹ ',
               ),
+              style: TextStyle(color: appTheme.textColor),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Places to Visit',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
             TextField(
               controller: _placeController,
-              decoration: const InputDecoration(
-                hintText: 'Enter place and press Enter or comma',
+              decoration: InputDecoration(
+                hintText: 'Enter place',
+                labelText: 'Places',
+                hintStyle: TextStyle(color: appTheme.secondaryTextColor),
+                labelStyle: TextStyle(color: appTheme.secondaryTextColor),
                 border: OutlineInputBorder(),
               ),
+              style: TextStyle(color: appTheme.textColor),
               onSubmitted: _addPlace,
               onChanged: (value) {
                 if (value.endsWith(',')) {
@@ -323,58 +327,76 @@ class PackageEditScreenState extends State<PackageEditScreen> {
               },
             ),
             const SizedBox(height: 16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = (constraints.maxWidth / 100).floor();
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount > 0 ? crossAxisCount : 1,
-                    crossAxisSpacing: 8.0,
-                    mainAxisSpacing: 8.0,
-                    childAspectRatio: 2,
-                  ),
-                  itemCount: _placesToVisit.length,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+            Container(
+              height: 200,
+              width: 400,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: EdgeInsets.all(4),
+              child: SingleChildScrollView(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final crossAxisCount = (constraints.maxWidth / 100).floor();
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount > 0 ? crossAxisCount : 1,
+                        crossAxisSpacing: 8.0,
+                        mainAxisSpacing: 8.0,
+                        childAspectRatio: 2,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _placesToVisit[index],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                      itemCount: _placesToVisit.length,
+                      itemBuilder: (context, index) {
+                        final placeName = _placesToVisit[index];
+                        return GestureDetector(
+                          onTap: () {
+                            showPlaceDialog(
+                                context: context, placeName: placeName);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: appTheme.secondaryColor,
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _placesToVisit[index],
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: appTheme.textColor),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                GestureDetector(
+                                  onTap: () => _removePlace(index),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          GestureDetector(
-                            onTap: () => _removePlace(index),
-                            child: const Icon(
-                              Icons.close,
-                              size: 18,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   },
-                );
-              },
+                ),
+              ),
             ),
           ],
         ),
