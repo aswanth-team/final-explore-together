@@ -106,7 +106,10 @@ class EditAgencyPageState extends State<EditAgencyPage> {
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        backgroundColor: appTheme.primaryColor,
+        backgroundColor: appTheme.secondaryColor,
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
         title: Text(
           'Edit Agency',
           style: TextStyle(

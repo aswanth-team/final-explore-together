@@ -181,6 +181,9 @@ class PackageEditScreenState extends State<PackageEditScreen> {
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
         backgroundColor: appTheme.secondaryColor,
         title: Text(
           'Edit Package',

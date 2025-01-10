@@ -3,8 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/app_colors.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/counder.dart';
 import '../../../utils/loading.dart';
 import '../BuddyScreen/buddies_screen.dart';
@@ -93,8 +95,12 @@ class ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        backgroundColor: appTheme.secondaryColor,
         actions: [
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
@@ -115,8 +121,8 @@ class ProfilePageState extends State<ProfilePage> {
                   IconButton(
                     icon: const Icon(
                       Icons.notifications,
-                      size: 27.0,
-                      color: Colors.blueGrey,
+                      size: 25.0,
+                      color: Colors.amber,
                     ),
                     onPressed: () {
                       Navigator.push(
@@ -157,7 +163,7 @@ class ProfilePageState extends State<ProfilePage> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.menu),
+            icon: Icon(Icons.menu, color: appTheme.textColor),
             onPressed: () {
               Navigator.push(
                 context,
@@ -186,11 +192,14 @@ class ProfilePageState extends State<ProfilePage> {
               ],
             );
           } else if (snapshot.hasError) {
-            return const Center(child: Text("Error loading profile data"));
+            return Center(
+                child: Text(
+              "Error loading profile data",
+              style: TextStyle(color: appTheme.textColor),
+            ));
           } else if (snapshot.hasData) {
             final profileData = snapshot.data?.data();
             var userImage = profileData!['userimage'];
-            print(profileData);
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,17 +293,18 @@ class ProfilePageState extends State<ProfilePage> {
                                         children: [
                                           Text(
                                             formatCount(buddiesCount),
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: appTheme.textColor),
                                           ),
-                                          const Text(
+                                          Text(
                                             'Buddies',
                                             style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.normal,
-                                            ),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.normal,
+                                                color: appTheme
+                                                    .secondaryTextColor),
                                           ),
                                         ],
                                       ),
@@ -322,17 +332,18 @@ class ProfilePageState extends State<ProfilePage> {
                                         children: [
                                           Text(
                                             formatCount(buddyingCount),
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: appTheme.textColor),
                                           ),
-                                          const Text(
+                                          Text(
                                             'Buddying',
                                             style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.normal,
-                                            ),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.normal,
+                                                color: appTheme
+                                                    .secondaryTextColor),
                                           ),
                                         ],
                                       ),
@@ -346,17 +357,17 @@ class ProfilePageState extends State<ProfilePage> {
                                     children: [
                                       Text(
                                         formatCount(totalPosts),
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: appTheme.textColor),
                                       ),
-                                      const Text(
+                                      Text(
                                         'Posts',
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.normal,
-                                        ),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.normal,
+                                            color: appTheme.secondaryTextColor),
                                       ),
                                     ],
                                   ),
@@ -368,17 +379,17 @@ class ProfilePageState extends State<ProfilePage> {
                                     children: [
                                       Text(
                                         formatCount(completedPosts),
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: appTheme.textColor),
                                       ),
-                                      const Text(
+                                      Text(
                                         'Completed',
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.normal,
-                                        ),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.normal,
+                                            color: appTheme.secondaryTextColor),
                                       ),
                                     ],
                                   ),
@@ -397,8 +408,10 @@ class ProfilePageState extends State<ProfilePage> {
                       children: [
                         Text(
                           profileData['fullname'],
-                          style: const TextStyle(
-                              fontSize: 17, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: appTheme.textColor),
                         ),
                         const SizedBox(height: 8),
                         //Text('DOB: ${profileData['dob']}'),
@@ -406,7 +419,8 @@ class ProfilePageState extends State<ProfilePage> {
                         // Text('Gender: ${profileData['gender']}'),
                         // const SizedBox(height: 16),
                         Text(profileData['userbio'] ?? '',
-                            style: const TextStyle(fontSize: 12)),
+                            style: TextStyle(
+                                fontSize: 12, color: appTheme.textColor)),
                       ],
                     ),
                   ),
@@ -436,17 +450,15 @@ class ProfilePageState extends State<ProfilePage> {
                             final twitterLink = profileData['x'];
                             launchUrl(Uri.parse(twitterLink));
                           },
-                          icon: const FaIcon(
+                          icon: FaIcon(
                             FontAwesomeIcons.x,
-                            color: Color.fromARGB(255, 0, 0, 0),
+                            color: appTheme.textColor,
                             size: 15,
                           ),
                           tooltip: 'X',
                         ),
                       if ((profileData['x']?.isNotEmpty ?? false))
                         const SizedBox(width: 6),
-
-                      // Facebook Icon
                       if ((profileData['facebook']?.isNotEmpty ?? false))
                         IconButton(
                           onPressed: () {
@@ -492,8 +504,8 @@ class ProfilePageState extends State<ProfilePage> {
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.black,
-                                    backgroundColor: Colors.white,
+                                    foregroundColor: appTheme.textColor,
+                                    backgroundColor: appTheme.secondaryColor,
                                     side: const BorderSide(
                                       color: Colors.black,
                                       width: 0.3,
@@ -518,8 +530,8 @@ class ProfilePageState extends State<ProfilePage> {
                                     );
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.black,
-                                    backgroundColor: Colors.white,
+                                    foregroundColor: appTheme.textColor,
+                                    backgroundColor: appTheme.secondaryColor,
                                     side: const BorderSide(
                                       color: Colors.black,
                                       width: 0.3,
@@ -550,13 +562,19 @@ class ProfilePageState extends State<ProfilePage> {
                                   showPosts = true;
                                 });
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.grid_on,
-                                color: Colors.black,
+                                color: showPosts
+                                    ? Colors.blue
+                                    : appTheme.textColor,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Posts',
-                                style: TextStyle(color: Colors.black),
+                                style: TextStyle(
+                                  color: showPosts
+                                      ? Colors.blue
+                                      : appTheme.textColor,
+                                ),
                               ),
                             ),
                             if (showPosts)
@@ -576,20 +594,26 @@ class ProfilePageState extends State<ProfilePage> {
                                   showPosts = false;
                                 });
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.photo_album,
-                                color: Colors.black,
+                                color: !showPosts
+                                    ? Colors.blue
+                                    : appTheme.textColor,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Trip Images',
-                                style: TextStyle(color: Colors.black),
+                                style: TextStyle(
+                                  color: !showPosts
+                                      ? Colors.blue
+                                      : appTheme.textColor,
+                                ),
                               ),
                             ),
                             if (!showPosts)
                               Container(
                                 height: 2,
                                 width: 50,
-                                color: Colors.black,
+                                color: Colors.blue,
                               ),
                           ],
                         ),
@@ -607,7 +631,7 @@ class ProfilePageState extends State<ProfilePage> {
               ),
             );
           } else {
-            return const Text("No data available");
+            return  Text("No data available", style: TextStyle(color: appTheme.textColor));
           }
         },
       ),
@@ -625,10 +649,7 @@ class ProfilePageState extends State<ProfilePage> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
-              Icons.add,
-              size: 28,
-            ),
+            child: const Icon(Icons.add, size: 28, color: Colors.white),
           ),
         ),
       ),

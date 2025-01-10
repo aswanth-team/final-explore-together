@@ -2,8 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/floating_button.dart';
 import '../../../../utils/loading.dart';
 import '../../aiChat/ai_chat_screen.dart';
@@ -154,6 +156,8 @@ class ChatHomeScreenState extends State<ChatHomeScreen>
   }
 
   Widget _buildChatList(List<Map<String, dynamic>> chats) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     final searchQuery = _searchController.text.toLowerCase();
     final filteredChats = chats.where((chat) {
       return chat['username'].toString().toLowerCase().contains(searchQuery);
@@ -166,111 +170,123 @@ class ChatHomeScreenState extends State<ChatHomeScreen>
               ? 'No chats found.'
               : 'No chats matching "${_searchController.text}".',
           textAlign: TextAlign.center,
+          style: TextStyle(color: appTheme.textColor),
         ),
       );
     }
 
-    return ListView.builder(
-      itemCount: filteredChats.length,
-      itemBuilder: (context, index) {
-        final chat = filteredChats[index];
-        return ListTile(
-          leading: CachedNetworkImage(
-            imageUrl: chat['userimage'],
-            imageBuilder: (context, imageProvider) => CircleAvatar(
-              backgroundImage: imageProvider,
-              radius: 20,
+    return Container(
+      color: appTheme.primaryColor,
+      child: ListView.builder(
+        itemCount: filteredChats.length,
+        itemBuilder: (context, index) {
+          final chat = filteredChats[index];
+          return ListTile(
+            leading: CachedNetworkImage(
+              imageUrl: chat['userimage'],
+              imageBuilder: (context, imageProvider) => CircleAvatar(
+                backgroundImage: imageProvider,
+                radius: 20,
+              ),
+              placeholder: (context, url) => const CircleAvatar(
+                radius: 20,
+                child: Icon(Icons.group),
+              ),
+              errorWidget: (context, url, error) => const CircleAvatar(
+                radius: 20,
+                child: Icon(Icons.error),
+              ),
             ),
-            placeholder: (context, url) => const CircleAvatar(
-              radius: 20,
-              child: Icon(Icons.group),
+            title: Text(
+              chat['username'],
+              style: TextStyle(color: appTheme.textColor),
             ),
-            errorWidget: (context, url, error) => const CircleAvatar(
-              radius: 20,
-              child: Icon(Icons.error),
+            subtitle: Text(
+              chat['latestMessage'],
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: appTheme.secondaryTextColor),
             ),
-          ),
-          title: Text(chat['username']),
-          subtitle: Text(
-            chat['latestMessage'],
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: (chat['unseenCount'] > 0)
-              ? Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${chat['unseenCount']}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+            trailing: (chat['unseenCount'] > 0)
+                ? Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${chat['unseenCount']}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                : null,
+            onTap: () async {
+              if (chat['unseenCount'] > 0) {
+                chat['unseenCount'] = 0;
+                await _saveChatsToCache(chats);
+              }
+              try {
+                await FirebaseFirestore.instance
+                    .collection('chat/${chat['chatRoomId']}/messages')
+                    .where('senderId', isEqualTo: chat['userId'])
+                    .where('isSeen', isEqualTo: false)
+                    .get()
+                    .then((querySnapshot) {
+                  for (var doc in querySnapshot.docs) {
+                    doc.reference.update({'isSeen': true});
+                  }
+                });
+              } catch (e) {
+                print('Error updating message status: $e');
+              }
+              if (context.mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatScreen(
+                      currentUserId: currentUserId,
+                      chatUserId: chat['userId'],
+                      chatRoomId: chat['chatRoomId'],
+                      onMessageSent: () {},
                     ),
                   ),
-                )
-              : null,
-          onTap: () async {
-            if (chat['unseenCount'] > 0) {
-              chat['unseenCount'] = 0;
-              await _saveChatsToCache(chats);
-            }
-            try {
-              await FirebaseFirestore.instance
-                  .collection('chat/${chat['chatRoomId']}/messages')
-                  .where('senderId', isEqualTo: chat['userId'])
-                  .where('isSeen', isEqualTo: false)
-                  .get()
-                  .then((querySnapshot) {
-                for (var doc in querySnapshot.docs) {
-                  doc.reference.update({'isSeen': true});
-                }
-              });
-            } catch (e) {
-              print('Error updating message status: $e');
-            }
-            if (context.mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatScreen(
-                    currentUserId: currentUserId,
-                    chatUserId: chat['userId'],
-                    chatRoomId: chat['chatRoomId'],
-                    onMessageSent: () {},
-                  ),
-                ),
-              );
-            }
-          },
-        );
-      },
+                );
+              }
+            },
+          );
+        },
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        backgroundColor: appTheme.primaryColor,
         title: Padding(
           padding: const EdgeInsets.all(8.0),
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Search',
-              prefixIcon: Icon(
-                Icons.search,
-                color: Colors.grey[600],
-              ),
+              filled: true,
+              fillColor: appTheme.primaryColor,
+              hintText: 'Search...',
+              hintStyle:
+                  TextStyle(color: appTheme.secondaryTextColor, fontSize: 16),
+              prefixIcon:
+                  Icon(Icons.search, color: appTheme.secondaryTextColor),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
-                      icon: Icon(
-                        Icons.clear,
-                        color: Colors.grey[600],
-                      ),
+                      icon:
+                          Icon(Icons.clear, color: appTheme.secondaryTextColor),
                       onPressed: () {
                         setState(() {
                           _searchController.clear();
@@ -282,18 +298,19 @@ class ChatHomeScreenState extends State<ChatHomeScreen>
                   const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.blue, width: 2),
+                borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.blue, width: 2),
+                borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.grey, width: 1),
+                borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
               ),
             ),
             onChanged: (value) => setState(() {}),
+            style: TextStyle(color: appTheme.textColor),
           ),
         ),
       ),
@@ -310,8 +327,11 @@ class ChatHomeScreenState extends State<ChatHomeScreen>
                       if (cacheSnapshot.hasData) {
                         return _buildChatList(cacheSnapshot.data!);
                       }
-                      return const Center(
-                          child: Text('No cached chats available'));
+                      return Center(
+                          child: Text(
+                        'No cached chats available',
+                        style: TextStyle(color: appTheme.textColor),
+                      ));
                     },
                   );
                 }

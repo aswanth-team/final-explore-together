@@ -151,7 +151,15 @@ class ReportDetailsPageState extends State<ReportDetailsPage> {
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: Text("Report Details"),
+        
+        backgroundColor: appTheme.secondaryColor,
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
+        title: Text(
+          "Report Details",
+          style: TextStyle(color: appTheme.textColor),
+        ),
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance

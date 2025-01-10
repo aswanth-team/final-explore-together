@@ -106,6 +106,9 @@ class AdminPackageDetailsScreenState extends State<AdminPackageDetailsScreen> {
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
         backgroundColor: appTheme.secondaryColor,
         title: Text(
           'Package Details',

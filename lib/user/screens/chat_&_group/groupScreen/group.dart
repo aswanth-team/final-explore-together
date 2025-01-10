@@ -4,8 +4,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../services/cloudinary_upload.dart';
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/dialogues.dart';
 import '../../../../utils/floating_button.dart';
 import '../../../../utils/loading.dart';
@@ -330,7 +332,11 @@ class GroupHomeScreenState extends State<GroupHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
+
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       floatingActionButton: FloatingChatButton(
         heroTag: 'CreateGroup',
         onPressed: () {
@@ -354,17 +360,17 @@ class GroupHomeScreenState extends State<GroupHomeScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search groups...',
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Colors.grey[600],
-                ),
+                filled: true,
+                fillColor: appTheme.primaryColor,
+                hintText: 'Search...',
+                hintStyle:
+                    TextStyle(color: appTheme.secondaryTextColor, fontSize: 16),
+                prefixIcon:
+                    Icon(Icons.search, color: appTheme.secondaryTextColor),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: Colors.grey[600],
-                        ),
+                        icon: Icon(Icons.clear,
+                            color: appTheme.secondaryTextColor),
                         onPressed: () {
                           setState(() {
                             _searchController.clear();
@@ -377,15 +383,15 @@ class GroupHomeScreenState extends State<GroupHomeScreen> {
                     const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.grey, width: 1),
+                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
                 ),
               ),
               onChanged: (value) {
@@ -393,6 +399,7 @@ class GroupHomeScreenState extends State<GroupHomeScreen> {
                   _searchQuery = value;
                 });
               },
+              style: TextStyle(color: appTheme.textColor),
             ),
           ),
           Expanded(
@@ -408,13 +415,19 @@ class GroupHomeScreenState extends State<GroupHomeScreen> {
                         const Icon(Icons.error_outline,
                             size: 48, color: Colors.red),
                         const SizedBox(height: 16),
-                        Text('Error: ${snapshot.error}'),
+                        Text(
+                          'Error: ${snapshot.error}',
+                          style: TextStyle(color: appTheme.textColor),
+                        ),
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: () {
                             setState(() {});
                           },
-                          child: const Text('Retry'),
+                          child: Text(
+                            'Retry',
+                            style: TextStyle(color: appTheme.textColor),
+                          ),
                         ),
                       ],
                     ),
@@ -422,13 +435,16 @@ class GroupHomeScreenState extends State<GroupHomeScreen> {
                 }
 
                 if (!snapshot.hasData) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         LoadingAnimation(),
                         SizedBox(height: 16),
-                        Text('Loading groups...'),
+                        Text(
+                          'Loading groups...',
+                          style: TextStyle(color: appTheme.textColor),
+                        ),
                       ],
                     ),
                   );
@@ -443,18 +459,22 @@ class GroupHomeScreenState extends State<GroupHomeScreen> {
 
                 if (filteredGroups.isEmpty) {
                   if (_searchQuery.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.group_outlined,
-                              size: 48, color: Colors.grey),
+                              size: 48, color: appTheme.secondaryTextColor),
                           SizedBox(height: 16),
-                          Text('No groups yet'),
+                          Text(
+                            'No groups yet',
+                            style: TextStyle(color: appTheme.textColor),
+                          ),
                           SizedBox(height: 8),
                           Text(
                             'Create a new group to get started',
-                            style: TextStyle(color: Colors.grey),
+                            style:
+                                TextStyle(color: appTheme.secondaryTextColor),
                           ),
                         ],
                       ),
@@ -464,10 +484,13 @@ class GroupHomeScreenState extends State<GroupHomeScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.search_off,
-                              size: 48, color: Colors.grey),
+                          Icon(Icons.search_off,
+                              size: 48, color: appTheme.secondaryTextColor),
                           const SizedBox(height: 16),
-                          Text('No groups found matching "$_searchQuery"'),
+                          Text(
+                            'No groups found matching "$_searchQuery"',
+                            style: TextStyle(color: appTheme.textColor),
+                          ),
                         ],
                       ),
                     );
@@ -500,28 +523,33 @@ class GroupHomeScreenState extends State<GroupHomeScreen> {
                               backgroundImage: imageProvider,
                               radius: 25,
                             ),
-                            placeholder: (context, url) => const CircleAvatar(
+                            placeholder: (context, url) => CircleAvatar(
                               radius: 25,
-                              child: Icon(Icons.group),
+                              child: Icon(Icons.group,
+                                  color: appTheme.secondaryTextColor),
                             ),
                             errorWidget: (context, url, error) =>
                                 const CircleAvatar(
                               radius: 25,
-                              child: Icon(Icons.error),
+                              child: Icon(
+                                Icons.error,
+                                color: Colors.red,
+                              ),
                             ),
                           ),
                           title: Text(
                             group.name.length > 19
-                                ? '${group.name.substring(0, 19)}...'
+                                ? '${group.name.substring(0, 15)}...'
                                 : group.name,
-                            style: const TextStyle(fontSize: 18),
+                            style: TextStyle(
+                                fontSize: 18, color: appTheme.textColor),
                           ),
                           subtitle: Text(
                             lastMessage,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: appTheme.secondaryTextColor,
                               fontSize: 12,
                             ),
                           ),
@@ -602,9 +630,19 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Create Group'),
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Create Group',
+          style: TextStyle(color: appTheme.textColor),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
@@ -621,17 +659,20 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
               child: TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: 'Group Name',
                   hintText: 'Enter Group Name',
+                  hintStyle: TextStyle(
+                      color: appTheme.secondaryTextColor, fontSize: 16),
+                  filled: true,
+                  fillColor: appTheme.primaryColor,
                   prefixIcon: Icon(
                     Icons.group,
-                    color: Colors.grey[600],
+                    color: appTheme.secondaryTextColor,
                   ),
                   suffixIcon: _nameController.text.isNotEmpty
                       ? IconButton(
                           icon: Icon(
                             Icons.clear,
-                            color: Colors.grey[600],
+                            color: appTheme.secondaryTextColor,
                           ),
                           onPressed: () {
                             setState(() {
@@ -644,18 +685,22 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
                       const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Colors.blue, width: 2),
+                    borderSide:
+                        BorderSide(color: appTheme.textColor, width: 0.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Colors.blue, width: 2),
+                    borderSide:
+                        BorderSide(color: appTheme.textColor, width: 0.5),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Colors.grey, width: 1),
+                    borderSide:
+                        BorderSide(color: appTheme.textColor, width: 0.5),
                   ),
                 ),
                 onChanged: (value) => setState(() {}),
+                style: TextStyle(color: appTheme.textColor),
               ),
             ),
           ),
@@ -669,17 +714,20 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               decoration: InputDecoration(
-                labelText: 'Search Users',
+                filled: true,
+                fillColor: appTheme.primaryColor,
                 hintText: 'Search Users',
+                hintStyle:
+                    TextStyle(color: appTheme.secondaryTextColor, fontSize: 16),
                 prefixIcon: Icon(
                   Icons.search,
-                  color: Colors.grey[600],
+                  color: appTheme.secondaryTextColor,
                 ),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: Icon(
                           Icons.clear,
-                          color: Colors.grey[600],
+                          color: appTheme.secondaryTextColor,
                         ),
                         onPressed: () {
                           setState(() {
@@ -692,20 +740,22 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
                     const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.grey, width: 1),
+                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
                 ),
               ),
               onChanged: (value) => setState(() => _searchQuery = value),
+              style: TextStyle(color: appTheme.textColor),
             ),
           ),
+          SizedBox(height: 20),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance.collection('user').snapshots(),
@@ -739,13 +789,18 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
                             : null,
                         child: userImage == null ? Text(username[0]) : null,
                       ),
-                      title: Text(username),
+                      title: Text(
+                        username,
+                        style: TextStyle(color: appTheme.textColor),
+                      ),
                       trailing: IconButton(
                         icon: Icon(
                           isSelected
                               ? Icons.check_circle
                               : Icons.check_circle_outline,
-                          color: isSelected ? Colors.green : null,
+                          color: isSelected
+                              ? Colors.green
+                              : appTheme.secondaryTextColor,
                         ),
                         onPressed: () => setState(() {
                           if (isSelected) {

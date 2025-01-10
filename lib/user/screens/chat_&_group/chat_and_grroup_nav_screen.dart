@@ -1,7 +1,10 @@
+import 'package:explore_together/utils/loading.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../utils/app_theme.dart';
 import 'chatScreen/chat_screen.dart';
 import 'groupScreen/group.dart';
 
@@ -39,15 +42,20 @@ class ChatAndGroupState extends State<ChatAndGroup> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     if (isLoading) {
       return const Center(
-        child: CircularProgressIndicator(),
+        child: LoadingAnimation(),
       );
     }
 
     if (currentUserId == null) {
-      return const Center(
-        child: Text('User not logged in'),
+      return Center(
+        child: Text(
+          'User not logged in',
+          style: TextStyle(color: appTheme.textColor),
+        ),
       );
     }
 
@@ -55,10 +63,24 @@ class ChatAndGroupState extends State<ChatAndGroup> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          bottom: const TabBar(
+          backgroundColor: appTheme.secondaryColor,
+          bottom: TabBar(
+            labelColor: Colors.blue,
+            unselectedLabelColor: appTheme.textColor,
+            indicatorColor: Colors.blue,
             tabs: [
-              Tab(text: 'Chat'),
-              Tab(text: 'Group'),
+              Tab(
+                child: Text(
+                  'Chat',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              Tab(
+                child: Text(
+                  'Group',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              )
             ],
           ),
           toolbarHeight: 10,

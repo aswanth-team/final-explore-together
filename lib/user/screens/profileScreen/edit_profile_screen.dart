@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'dart:io';
 import '../../../services/cloudinary_upload.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/loading.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -125,11 +127,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: Text(_fullNameController.text.isNotEmpty
-            ? _fullNameController.text
-            : 'Edit Profile'),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          _fullNameController.text.isNotEmpty
+              ? _fullNameController.text
+              : 'Edit Profile',
+          style: TextStyle(color: appTheme.textColor),
+        ),
       ),
       body: Stack(
         children: [
@@ -152,27 +161,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           : const CircularProgressIndicator(),
                       TextButton(
                         onPressed: _pickImage,
-                        child: const Text('Edit Image'),
+                        child: const Text(
+                          'Edit Image',
+                          style: TextStyle(color: Colors.blue),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                TextField(
-                  controller: _fullNameController,
-                  decoration: const InputDecoration(labelText: 'Full Name'),
-                  onChanged: (_) => setState(() => _isChanged = true),
+                SizedBox(
+                  width: 350,
+                  child: TextField(
+                    controller: _fullNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Full Name',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      labelStyle: TextStyle(color: appTheme.secondaryTextColor),
+                    ),
+                    style: TextStyle(color: appTheme.textColor),
+                    onChanged: (_) => setState(() => _isChanged = true),
+                  ),
                 ),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: _gender,
-                        items: const [
-                          DropdownMenuItem(value: 'Male', child: Text('Male')),
+                        items: [
                           DropdownMenuItem(
-                              value: 'Female', child: Text('Female')),
+                              value: 'Male',
+                              child: Text('Male',
+                                  style: TextStyle(color: appTheme.textColor))),
                           DropdownMenuItem(
-                              value: 'Other', child: Text('Other')),
+                              value: 'Female',
+                              child: Text(
+                                'Female',
+                                style: TextStyle(color: appTheme.textColor),
+                              )),
+                          DropdownMenuItem(
+                              value: 'Other',
+                              child: Text('Other',
+                                  style: TextStyle(color: appTheme.textColor))),
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -180,13 +212,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             _isChanged = true;
                           });
                         },
-                        decoration: const InputDecoration(labelText: 'Gender'),
+                        decoration: InputDecoration(
+                          labelText: 'Gender',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          labelStyle:
+                              TextStyle(color: appTheme.secondaryTextColor),
+                        ),
+                        dropdownColor: appTheme.secondaryColor,
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: TextButton(
-                        onPressed: () async {
+                      child: GestureDetector(
+                        onTap: () async {
                           final pickedDate = await showDatePicker(
                             context: context,
                             initialDate: _dob ?? DateTime.now(),
@@ -201,39 +241,109 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             });
                           }
                         },
-                        child: Text(
-                          _dob != null
-                              ? '${_dob!.year}-${_dob!.month}-${_dob!.day}'
-                              : 'Select DOB',
+                        child: AbsorbPointer(
+                          child: TextFormField(
+                            decoration: InputDecoration(
+                              labelText: 'Date of Birth',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              labelStyle:
+                                  TextStyle(color: appTheme.secondaryTextColor),
+                            ),
+                            controller: TextEditingController(
+                              text: _dob != null
+                                  ? '${_dob!.year}-${_dob!.month.toString().padLeft(2, '0')}-${_dob!.day.toString().padLeft(2, '0')}'
+                                  : '',
+                            ),
+                            readOnly:
+                                true, // Makes the TextFormField non-editable
+                            style: TextStyle(color: appTheme.textColor),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                TextField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(labelText: 'Location'),
-                  onChanged: (_) => setState(() => _isChanged = true),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 350,
+                  child: TextField(
+                      controller: _locationController,
+                      decoration: InputDecoration(
+                        labelText: 'Location',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        labelStyle:
+                            TextStyle(color: appTheme.secondaryTextColor),
+                      ),
+                      onChanged: (_) => setState(() => _isChanged = true),
+                      style: TextStyle(color: appTheme.textColor)),
                 ),
-                TextField(
-                  controller: _bioController,
-                  decoration: const InputDecoration(labelText: 'Bio'),
-                  onChanged: (_) => setState(() => _isChanged = true),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 350,
+                  child: TextField(
+                      controller: _bioController,
+                      decoration: InputDecoration(
+                        labelText: 'Bio',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        labelStyle:
+                            TextStyle(color: appTheme.secondaryTextColor),
+                      ),
+                      onChanged: (_) => setState(() => _isChanged = true),
+                      style: TextStyle(color: appTheme.textColor)),
                 ),
-                TextField(
-                  controller: _instagramController,
-                  decoration: const InputDecoration(labelText: 'Instagram'),
-                  onChanged: (_) => setState(() => _isChanged = true),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 350,
+                  child: TextField(
+                      controller: _instagramController,
+                      decoration: InputDecoration(
+                        labelText: 'Instagram',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        labelStyle:
+                            TextStyle(color: appTheme.secondaryTextColor),
+                      ),
+                      onChanged: (_) => setState(() => _isChanged = true),
+                      style: TextStyle(color: appTheme.textColor)),
                 ),
-                TextField(
-                  controller: _facebookController,
-                  decoration: const InputDecoration(labelText: 'Facebook'),
-                  onChanged: (_) => setState(() => _isChanged = true),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 350,
+                  child: TextField(
+                      controller: _facebookController,
+                      decoration: InputDecoration(
+                        labelText: 'Facebook',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        labelStyle:
+                            TextStyle(color: appTheme.secondaryTextColor),
+                      ),
+                      onChanged: (_) => setState(() => _isChanged = true),
+                      style: TextStyle(color: appTheme.textColor)),
                 ),
-                TextField(
-                  controller: _xController,
-                  decoration: const InputDecoration(labelText: 'X (Twitter)'),
-                  onChanged: (_) => setState(() => _isChanged = true),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 350,
+                  child: TextField(
+                      controller: _xController,
+                      decoration: InputDecoration(
+                        labelText: 'X',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        labelStyle:
+                            TextStyle(color: appTheme.secondaryTextColor),
+                      ),
+                      onChanged: (_) => setState(() => _isChanged = true),
+                      style: TextStyle(color: appTheme.textColor)),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -241,6 +351,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: [
                     ElevatedButton(
                       onPressed: _isChanged ? _saveChanges : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
                       child: const Text('Save Changes'),
                     ),
                   ],

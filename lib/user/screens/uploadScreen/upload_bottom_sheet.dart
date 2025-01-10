@@ -1,14 +1,17 @@
-// bottom_sheet_modal.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../utils/app_theme.dart';
 import 'post_upload.dart';
 import 'trip_upload.dart';
 
 class BottomSheetModal {
   static void showModal(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+    final appTheme = themeManager.currentTheme;
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: appTheme.secondaryColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -29,28 +32,36 @@ class BottomSheetModal {
               ),
               ListTile(
                 leading: const Icon(Icons.post_add, color: Colors.blue),
-                title: const Text(
+                title: Text(
                   "Post",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: appTheme.textColor),
                 ),
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const PostUploader()),
+                    MaterialPageRoute(
+                        builder: (context) => const PostUploader()),
                   );
                 },
               ),
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.image, color: Colors.green),
-                title: const Text(
+                title: Text(
                   "Upload Image",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: appTheme.textColor),
                 ),
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ImageUploader()),
+                    MaterialPageRoute(
+                        builder: (context) => const ImageUploader()),
                   );
                 },
               ),

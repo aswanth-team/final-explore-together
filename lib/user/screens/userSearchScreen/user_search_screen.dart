@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../services/user/user_services.dart';
 import '../../../utils/app_colors.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/loading.dart';
 import '../userDetailsScreen/others_user_profile.dart';
 import '../user_screen.dart';
@@ -28,8 +30,11 @@ class SearchPageState extends State<SearchPage> {
       List<Map<String, dynamic>> fetchedUsers = await _userService.fetchUsers();
       if (mounted) {
         setState(() {
-          users =
-              fetchedUsers.where((user) => user['isRemoved'] == false).toList();
+          users = fetchedUsers
+              .where((user) =>
+                  user['isRemoved'] == false && user['userId'] != currentUserId)
+              .toList();
+
           isLoading = false;
         });
       }
@@ -51,28 +56,36 @@ class SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     List<Map<String, dynamic>> filteredUsers = users
         .where((user) =>
             user['userName'].toLowerCase().startsWith(query.toLowerCase()))
         .toList();
 
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
+        backgroundColor: appTheme.primaryColor,
         toolbarHeight: kToolbarHeight + 10.0,
         title: TextField(
           decoration: InputDecoration(
             hintText: "Search by username...",
+            hintStyle: TextStyle(color: appTheme.secondaryTextColor),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: appTheme.secondaryColor,
             prefixIcon: Icon(
               Icons.search,
-              color: Colors.grey[600],
+              color: appTheme.secondaryTextColor,
             ),
             suffixIcon: query.isNotEmpty
                 ? IconButton(
                     icon: Icon(
                       Icons.clear,
-                      color: Colors.grey[600],
+                      color: appTheme.secondaryTextColor,
                     ),
                     onPressed: () {
                       setState(() {
@@ -85,17 +98,18 @@ class SearchPageState extends State<SearchPage> {
                 const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.blue, width: 2),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.blue, width: 2),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.grey, width: 1),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
           ),
+          style: TextStyle(color: appTheme.textColor),
           onChanged: (value) {
             setState(() {
               query = value;
@@ -138,7 +152,7 @@ class SearchPageState extends State<SearchPage> {
                                 }
                               },
                               child: Container(
-                                color: Colors.white,
+                                color: appTheme.primaryColor,
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 10, horizontal: 0),
                                 child: Row(
@@ -151,7 +165,7 @@ class SearchPageState extends State<SearchPage> {
                                           border: Border.all(
                                             color: AppColors.genderBorderColor(
                                                 user['userGender']),
-                                            width: 1.0,
+                                            width: 2.0,
                                           ),
                                         ),
                                         child: CircleAvatar(
@@ -162,21 +176,23 @@ class SearchPageState extends State<SearchPage> {
                                         ),
                                       ),
                                     ),
+                                    SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
                                         user['userName'],
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
+                                          color: appTheme.textColor,
                                         ),
+                                        overflow: TextOverflow
+                                            .ellipsis, // Add this line
                                       ),
                                     ),
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 8.0),
-                                      child: Icon(
-                                        Icons.search,
-                                        color: Colors.grey,
-                                      ),
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 10.0),
+                                      child: Icon(Icons.search,
+                                          color: appTheme.secondaryTextColor),
                                     ),
                                   ],
                                 ),

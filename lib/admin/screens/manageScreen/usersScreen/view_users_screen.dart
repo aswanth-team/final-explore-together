@@ -8,37 +8,52 @@ import '../../../../utils/loading.dart';
 import 'user_profile_view_screen.dart';
 
 class UserSearchPage extends StatefulWidget {
-  const UserSearchPage({super.key});
+  const UserSearchPage({Key? key}) : super(key: key);
 
   @override
   UserSearchPageState createState() => UserSearchPageState();
 }
 
 class UserSearchPageState extends State<UserSearchPage> {
+  final TextEditingController _searchController = TextEditingController();
   String query = "";
   String selectedCategory = "All";
   final List<String> categories = ["All", "Active", "Removed"];
   final UserService userService = UserService();
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<List<Map<String, dynamic>>> getFilteredUsers() async {
-    final allUsers = await userService.fetchUsers();
-    List<Map<String, dynamic>> filteredUsers = [];
+    try {
+      final allUsers = await userService.fetchUsers();
+      List<Map<String, dynamic>> filteredUsers = [];
 
-    if (selectedCategory == "All") {
-      filteredUsers = allUsers;
-    } else if (selectedCategory == "Active") {
-      filteredUsers = allUsers.where((user) => !user['isRemoved']).toList();
-    } else if (selectedCategory == "Removed") {
-      filteredUsers = allUsers.where((user) => user['isRemoved']).toList();
-    }
-    if (query.isNotEmpty) {
-      filteredUsers = filteredUsers
-          .where((user) =>
-              user['userName'].toLowerCase().startsWith(query.toLowerCase()))
-          .toList();
-    }
+      if (selectedCategory == "All") {
+        filteredUsers = allUsers;
+      } else if (selectedCategory == "Active") {
+        filteredUsers = allUsers.where((user) => !user['isRemoved']).toList();
+      } else if (selectedCategory == "Removed") {
+        filteredUsers = allUsers.where((user) => user['isRemoved']).toList();
+      }
 
-    return filteredUsers;
+      if (query.isNotEmpty) {
+        filteredUsers = filteredUsers
+            .where((user) => user['userName']
+                .toString()
+                .toLowerCase()
+                .startsWith(query.toLowerCase()))
+            .toList();
+      }
+
+      return filteredUsers;
+    } catch (e) {
+      print("Error fetching users: $e");
+      return [];
+    }
   }
 
   void _showConfirmationDialog(String userId, bool isRemoved, String username) {
@@ -46,12 +61,12 @@ class UserSearchPageState extends State<UserSearchPage> {
       context: context,
       title: isRemoved ? 'Restrict User' : 'Reinstate User',
       message: isRemoved
-          ? 'Are you sure you want to restrict this $username?'
-          : 'Are you sure you want to reinstate this  $username?',
+          ? 'Are you sure you want to restrict $username?'
+          : 'Are you sure you want to reinstate $username?',
       cancelButtonText: 'Cancel',
       confirmButtonText: isRemoved ? 'Remove' : 'Add',
-      onConfirm: () {
-        updateUserStatus(userId, isRemoved);
+      onConfirm: () async {
+        await updateUserStatus(userId, isRemoved);
       },
       titleIcon: isRemoved
           ? const Icon(Icons.delete_forever, color: Colors.red)
@@ -64,8 +79,9 @@ class UserSearchPageState extends State<UserSearchPage> {
 
   Future<void> updateUserStatus(String userId, bool isRemoved) async {
     try {
-      userService.updateUserRemovalStatus(userId: userId, isRemoved: isRemoved);
-      final user = await UserService().fetchUserDetails(userId: userId);
+      await userService.updateUserRemovalStatus(
+          userId: userId, isRemoved: isRemoved);
+      final user = await userService.fetchUserDetails(userId: userId);
       final List<String> playerIds = List<String>.from(user['onId'] ?? []);
 
       if (playerIds.isNotEmpty) {
@@ -79,7 +95,9 @@ class UserSearchPageState extends State<UserSearchPage> {
           onIds: playerIds,
         );
       }
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     } catch (e) {
       print("Error updating user status: $e");
     }
@@ -87,182 +105,176 @@ class UserSearchPageState extends State<UserSearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeManager = Provider.of<ThemeManager>(context);
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
     final appTheme = themeManager.currentTheme;
+
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
-      body: Column(
-        children: [
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              style: TextStyle(
-                color: appTheme.textColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _searchController,
+                style: TextStyle(color: appTheme.textColor),
+                decoration: InputDecoration(
+                  hintText: 'Search....',
+                  hintStyle: TextStyle(color: appTheme.secondaryTextColor),
+                  prefixIcon:
+                      Icon(Icons.search, color: appTheme.secondaryTextColor),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: const BorderSide(color: Colors.blue, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: const BorderSide(color: Colors.blue, width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: const BorderSide(color: Colors.grey, width: 1),
+                  ),
+                  suffixIcon: query.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              query = '';
+                              _searchController.clear();
+                            });
+                          },
+                        )
+                      : null,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    query = value;
+                  });
+                },
               ),
-              controller: TextEditingController(text: query),
-              decoration: InputDecoration(
-                hintText: 'Search....',
-                hintStyle: TextStyle(
-                  color: appTheme.secondaryTextColor,
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: appTheme.secondaryTextColor,
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.grey, width: 1),
-                ),
-                suffixIcon: query.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            query = '';
-                          });
-                        },
-                      )
-                    : null,
-              ),
-              onChanged: (value) {
-                setState(() {
-                  query = value;
-                });
-              },
             ),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: categories.map((category) {
-                final isSelected = category == selectedCategory;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedCategory = category;
-                    });
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 8.0),
-                    decoration: BoxDecoration(
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: categories.map((category) {
+                  final isSelected = category == selectedCategory;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: MaterialButton(
+                      onPressed: () {
+                        setState(() {
+                          selectedCategory = category;
+                        });
+                      },
                       color: isSelected ? Colors.blue : appTheme.secondaryColor,
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      category,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : appTheme.textColor,
-                        fontWeight: FontWeight.bold,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      child: Text(
+                        category,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : appTheme.textColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: getFilteredUsers(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: LoadingAnimation());
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text("No users found"));
-                }
+            const SizedBox(height: 10),
+            Expanded(
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: getFilteredUsers(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: LoadingAnimation());
+                  }
 
-                final filteredUsers = snapshot.data!;
-                return ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemCount: filteredUsers.length,
-                  itemBuilder: (context, index) {
-                    final user = filteredUsers[index];
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
 
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OtherProfilePageForAdmin(
-                                userId: user['userId']),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        margin: EdgeInsets.zero,
-                        elevation: 5,
-                        color: appTheme.secondaryColor,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.zero,
-                        ),
-                        child: Row(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: CircleAvatar(
-                                backgroundImage:
-                                    NetworkImage(user['userImage']),
-                                radius: 20,
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                user['userName'],
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: appTheme.textColor),
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: () {
-                                _showConfirmationDialog(
-                                  user['userId'],
-                                  !user['isRemoved'],
-                                  user['userName'],
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: user['isRemoved']
-                                    ? Colors.green
-                                    : Colors.red,
-                                shape: const CircleBorder(),
-                                padding: const EdgeInsets.all(4),
-                              ),
-                              child: Text(
-                                user['isRemoved'] ? "+" : "-",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontSize: 12.0,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10)
-                          ],
-                        ),
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(
+                      child: Text(
+                        "No users found",
+                        style: TextStyle(color: appTheme.textColor),
                       ),
                     );
-                  },
-                );
-              },
+                  }
+
+                  final filteredUsers = snapshot.data!;
+                  return ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: filteredUsers.length,
+                    itemBuilder: (context, index) {
+                      final user = filteredUsers[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          vertical: 4.0,
+                          horizontal: 8.0,
+                        ),
+                        color: appTheme.secondaryColor,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundImage: NetworkImage(user['userImage']),
+                            radius: 20,
+                          ),
+                          title: Text(
+                            user['userName'],
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: appTheme.textColor,
+                            ),
+                          ),
+                          trailing: ElevatedButton(
+                            onPressed: () {
+                              _showConfirmationDialog(
+                                user['userId'],
+                                !user['isRemoved'],
+                                user['userName'],
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  user['isRemoved'] ? Colors.green : Colors.red,
+                              shape: const CircleBorder(),
+                              padding: const EdgeInsets.all(4),
+                            ),
+                            child: Text(
+                              user['isRemoved'] ? "+" : "-",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontSize: 12.0,
+                              ),
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OtherProfilePageForAdmin(
+                                  userId: user['userId'],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

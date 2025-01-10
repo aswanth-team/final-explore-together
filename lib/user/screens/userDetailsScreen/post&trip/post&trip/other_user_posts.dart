@@ -1,6 +1,7 @@
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../../services/post/firebase_post.dart';
+import '../../../../../utils/app_theme.dart';
 import '../../../../../utils/image_swipe.dart';
 import '../../../../../utils/loading.dart';
 import 'other_user_post_detail_screen.dart';
@@ -20,6 +21,8 @@ class UserPostsWidget extends StatefulWidget {
 class UserPostsWidgetState extends State<UserPostsWidget> {
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: UserPostServices().fetchUserPosts(userId: widget.userId),
       builder: (context, snapshot) {
@@ -28,20 +31,26 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
         }
 
         if (snapshot.hasError) {
-          return const Center(child: Text('Error fetching posts.'));
+          return Center(
+              child: Text(
+            'Error fetching posts.',
+            style: TextStyle(color: appTheme.textColor),
+          ));
         }
 
         final userPosts = snapshot.data ?? [];
 
         return userPosts.isEmpty
-            ? const Center(
+            ? Center(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(height: 50),
                     Text('🚫', style: TextStyle(fontSize: 50)),
-                    Text('No posts available'),
+                    Text(
+                      'No posts available',
+                      style: TextStyle(color: appTheme.textColor),
+                    ),
                   ],
                 ),
               )
@@ -74,20 +83,11 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: (post['tripCompleted'] ?? false)
-                                ? Colors.green[100]
-                                : Colors.white,
-                            border: Border.all(color: Colors.grey, width: 0.5),
+                            color: appTheme.secondaryColor,
+                            border: Border.all(
+                                color: appTheme.secondaryTextColor,
+                                width: 0.05),
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color.fromARGB(255, 138, 222, 255)
-                                    .withOpacity(0.1),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,16 +110,45 @@ class UserPostsWidgetState extends State<UserPostsWidget> {
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Center(
-                                  child: Text(
-                                    post['locationName'] ?? 'Unknown Location',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: Colors.black,
-                                      height: 1.2,
+                                child: Column(
+                                  children: [
+                                    Center(
+                                      child: Text(
+                                        post['locationName'] != null &&
+                                                post['locationName']!.length > 8
+                                            ? '${post['locationName']!.substring(0, 14)}...'
+                                            : post['locationName'] ?? 'Unknown',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: appTheme.textColor,
+                                          height: 1.2,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    if (post['tripCompleted'] ?? false)
+                                      Center(
+                                        child: Container(
+                                          margin:
+                                              const EdgeInsets.only(top: 4.0),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 4, vertical: 1.0),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green[300],
+                                            borderRadius:
+                                                BorderRadius.circular(8.0),
+                                          ),
+                                          child: Text(
+                                            'Completed',
+                                            style: TextStyle(
+                                              fontSize: 6,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ],

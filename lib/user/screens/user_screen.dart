@@ -2,13 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../login_screen.dart';
 
+import '../../utils/app_theme.dart';
 import 'chat_&_group/chatScreen/chat_utils.dart';
 import 'chat_&_group/chat_and_grroup_nav_screen.dart';
 import 'homeScreen/home_screen.dart';
 import 'packageAndTripassists/packages_and_assist.dart';
+import 'profileScreen/settingScreen/settings_screen.dart';
 import 'userManageScreens/temporarly_removed_screen.dart';
 import 'userSearchScreen/user_search_screen.dart';
 import 'profileScreen/profile_screen.dart';
@@ -25,6 +28,8 @@ class UserScreenState extends State<UserScreen> {
   late int _selectedIndex;
   final List<Widget> _pages = [
     const PackageAndTripAssistScreen(),
+    //SettingsPage(), SettingsPage(), SettingsPage(), SettingsPage(),
+
     const SearchPage(),
     const HomePage(),
     const ChatAndGroup(),
@@ -152,12 +157,15 @@ class UserScreenState extends State<UserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: appTheme.secondaryColor,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         iconSize: 20,
@@ -187,7 +195,7 @@ class UserScreenState extends State<UserScreen> {
           ),
         ],
         selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: appTheme.textColor,
         type: BottomNavigationBarType.fixed,
       ),
     );

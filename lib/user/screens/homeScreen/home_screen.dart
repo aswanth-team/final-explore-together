@@ -3,8 +3,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:string_similarity/string_similarity.dart';
 import '../../../utils/app_colors.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/counder.dart';
 import '../../../utils/floating_button.dart';
 import '../../../utils/image_swipe.dart';
@@ -106,52 +108,46 @@ class HomePageState extends State<HomePage> {
   }
 
   void _showSuggestions() {
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+    final appTheme = themeManager.currentTheme;
     _removeOverlay();
+
+    if (_searchQuery.isEmpty) return;
+    final matchingSuggestions = suggestions
+        .where((suggestion) =>
+            suggestion.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+
+    if (matchingSuggestions.isEmpty) return;
 
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final size = renderBox.size;
-
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         width: size.width,
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
-          offset: const Offset(0.0, kToolbarHeight + 10.0),
+          offset: const Offset(0.0, kToolbarHeight + 8.0),
           child: Material(
-            elevation: 4.0,
-            child: Container(
-              height: 200, // Fixed height for suggestions
-              color: Colors.white,
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: suggestions.length,
-                itemBuilder: (context, index) {
-                  final suggestion = suggestions[index];
-                  if (!suggestion
-                      .toLowerCase()
-                      .contains(_searchQuery.toLowerCase())) {
-                    return const SizedBox.shrink();
-                  }
-                  return ListTile(
-                    title: Text(
-                      suggestion,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 16.0),
-                    ),
-                    trailing: const Icon(Icons.search, color: Colors.grey),
-                    onTap: () {
-                      setState(() {
-                        _searchController.text = suggestion;
-                        _searchQuery = suggestion;
-                        isSearchTriggered = true;
-                      });
-                      _removeOverlay();
-                      _searchPosts();
-                    },
-                  );
-                },
+            elevation: 8.0,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.4,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: matchingSuggestions.length,
+                  itemBuilder: (context, index) => _buildSuggestionTile(
+                      matchingSuggestions[index],
+                      appTheme.secondaryColor,
+                      appTheme.textColor,
+                      appTheme.secondaryTextColor),
+                ),
               ),
             ),
           ),
@@ -162,28 +158,107 @@ class HomePageState extends State<HomePage> {
     Overlay.of(context).insert(_overlayEntry!);
   }
 
+  Widget _buildSuggestionTile(String suggestion, Color highlightColor,
+      Color textColor, Color iconColor) {
+    return Container(
+      color: highlightColor,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _searchController.text = suggestion;
+            _searchQuery = suggestion;
+            isSearchTriggered = true;
+          });
+          _removeOverlay();
+          _searchPosts();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Row(
+            children: [
+              Icon(
+                Icons.search,
+                color: iconColor,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  suggestion,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.north_west,
+                  size: 18,
+                  color: iconColor,
+                ),
+                onPressed: () {
+                  _searchController.text = suggestion;
+                  _searchController.selection = TextSelection.fromPosition(
+                    TextPosition(offset: _searchController.text.length),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _removeOverlay() {
     _overlayEntry?.remove();
     _overlayEntry = null;
   }
 
   Future<void> fetchSuggestions() async {
-    final querySnapshot =
-        await FirebaseFirestore.instance.collection('post').get();
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('post')
+        .where('userid', isNotEqualTo: currentUserId)
+        .get();
 
     if (!mounted) return;
 
-    final suggestionSet = <String>{};
+    // Using a Map to handle case-insensitive duplicates
+    final suggestionMap = <String, String>{};
+
     for (var doc in querySnapshot.docs) {
       final data = doc.data();
-      suggestionSet.add(data['locationName'] ?? '');
-      suggestionSet.addAll(List<String>.from(data['visitedPlaces'] ?? []));
-      suggestionSet.addAll(List<String>.from(data['planToVisitPlaces'] ?? []));
+
+      // Handle locationName
+      String locationName = (data['locationName']?.toString().trim() ?? '');
+      if (locationName.isNotEmpty) {
+        suggestionMap[locationName.toLowerCase()] = locationName;
+      }
+
+      // Handle visited places
+      final visitedPlaces = List<String>.from(data['visitedPlaces'] ?? [])
+          .where((place) => place.trim().isNotEmpty);
+      for (var place in visitedPlaces) {
+        suggestionMap[place.toLowerCase()] = place;
+      }
+
+      // Handle planned places
+      final planToVisitPlaces =
+          List<String>.from(data['planToVisitPlaces'] ?? [])
+              .where((place) => place.trim().isNotEmpty);
+      for (var place in planToVisitPlaces) {
+        suggestionMap[place.toLowerCase()] = place;
+      }
     }
 
     if (mounted) {
       setState(() {
-        suggestions = suggestionSet.toList();
+        // Get unique values while preserving original casing
+        suggestions = suggestionMap.values.toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       });
     }
   }
@@ -319,65 +394,77 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight + 10.0),
         child: AppBar(
+          backgroundColor: appTheme.primaryColor,
           toolbarHeight: kToolbarHeight + 10.0,
-          title: TextField(
-            controller: _searchController,
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-                isSearchTriggered = false;
-                if (value.isNotEmpty) {
-                  _showSuggestions();
-                } else {
-                  _removeOverlay();
-                }
-              });
-            },
-            onSubmitted: (value) {
-              setState(() {
-                _searchQuery = value;
-                isSearchTriggered = true;
-              });
-              _removeOverlay();
-              _searchPosts();
-            },
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              hintText: 'Search...',
-              hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
-              prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(Icons.clear, color: Colors.grey[600]),
-                      onPressed: () {
-                        setState(() {
-                          _searchController.clear();
-                          _searchQuery = "";
-                          isSearchTriggered = false;
-                          _fetchPosts();
-                        });
-                      },
-                    )
-                  : null,
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.blue, width: 2),
+          title: CompositedTransformTarget(
+            link: _layerLink,
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                  isSearchTriggered = false;
+                  if (value.isNotEmpty) {
+                    _showSuggestions();
+                  } else {
+                    _removeOverlay();
+                  }
+                });
+              },
+              onSubmitted: (value) {
+                setState(() {
+                  _searchQuery = value;
+                  isSearchTriggered = true;
+                });
+                _removeOverlay();
+                _searchPosts();
+              },
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: appTheme.primaryColor,
+                hintText: 'Search...',
+                hintStyle:
+                    TextStyle(color: appTheme.secondaryTextColor, fontSize: 16),
+                prefixIcon:
+                    Icon(Icons.search, color: appTheme.secondaryTextColor),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.clear,
+                            color: appTheme.secondaryTextColor),
+                        onPressed: () {
+                          setState(() {
+                            _removeOverlay();
+                            _searchController.clear();
+                            _searchQuery = "";
+                            isSearchTriggered = false;
+                            _fetchPosts();
+                          });
+                        },
+                      )
+                    : null,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
+                ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.blue, width: 2),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.grey, width: 1),
-              ),
+              style: TextStyle(color: appTheme.textColor),
             ),
           ),
           actions: [
@@ -400,7 +487,7 @@ class HomePageState extends State<HomePage> {
                       icon: const Icon(
                         Icons.notifications,
                         size: 30.0,
-                        color: Colors.blueGrey,
+                        color: Colors.amber,
                       ),
                       onPressed: () {
                         Navigator.push(
@@ -448,277 +535,333 @@ class HomePageState extends State<HomePage> {
           Column(
             children: [
               if (_searchQuery.isNotEmpty && !isSearchTriggered)
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: suggestions.length,
-                    itemBuilder: (context, index) {
-                      final suggestion = suggestions[index];
-                      if (!suggestion
-                          .toLowerCase()
-                          .contains(_searchQuery.toLowerCase())) {
-                        return const SizedBox.shrink();
-                      }
-                      return ListTile(
-                        title: Text(suggestion),
-                        onTap: () {
-                          setState(() {
-                            _searchController.text = suggestion;
-                            _searchQuery = suggestion;
-                            isSearchTriggered = true;
-                            _searchPosts();
-                          });
-                        },
-                      );
-                    },
-                  ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: suggestions.length,
+                  itemBuilder: (context, index) {
+                    final suggestion = suggestions[index];
+                    if (!suggestion
+                        .toLowerCase()
+                        .contains(_searchQuery.toLowerCase())) {
+                      return const SizedBox.shrink();
+                    }
+                    return ListTile(
+                      title: Text(suggestion),
+                      onTap: () {
+                        setState(() {
+                          _searchController.text = suggestion;
+                          _searchQuery = suggestion;
+                          isSearchTriggered = true;
+                          _searchPosts();
+                        });
+                      },
+                    );
+                  },
                 ),
               Expanded(
-                child: posts.isEmpty && !isLoading
-                    ? const Center(
-                        child: Text(
-                          'No posts available',
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _refreshPosts,
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          itemCount: posts.length + (isLoading ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == posts.length) {
-                              return Center(
-                                child: const LoadingAnimation(),
-                              );
-                            }
-
-                            var post =
-                                posts[index].data() as Map<String, dynamic>;
-                            String postId = posts[index].id;
-                            String userId = post['userid'];
-                            if (!users.containsKey(userId)) return Container();
-
-                            var user = users[userId]!;
-                            if (user['isRemoved'] == true) return Container();
-
-                            String locationName = post['locationName'];
-                            String locationDescription =
-                                post['locationDescription'];
-                            List locationImages = post['locationImages'];
-                            bool tripCompleted = post['tripCompleted'];
-                            bool isLiked = likedPosts[postId] ?? false;
-                            int likeCount = likeCounts[postId] ?? 0;
-
-                            return GestureDetector(
-                              onTap: () {
-                                if (userId == currentUserId) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          CurrentUserPostDetailScreen(
-                                        postId: postId,
-                                        userId: userId,
-                                        commentCount:
-                                            commentCounts[postId] ?? 0,
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          OtherUserPostDetailScreen(
-                                        postId: postId,
-                                        userId: userId,
-                                        commentCount:
-                                            commentCounts[postId] ?? 0,
-                                      ),
-                                    ),
+                child: isLoading
+                    ? const Center(child: LoadingAnimation())
+                    : posts.isEmpty && isSearchTriggered
+                        ? Center(
+                            child: Text(
+                              'No posts available',
+                              style: TextStyle(
+                                  fontSize: 18, color: appTheme.textColor),
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _refreshPosts,
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              itemCount: posts.length + (isLoading ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index == posts.length) {
+                                  return Center(
+                                    child: const LoadingAnimation(),
                                   );
                                 }
-                              },
-                              child: Card(
-                                elevation: 5,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15)),
-                                color: tripCompleted
-                                    ? Colors.green[50]
-                                    : Colors.white,
-                                child: Stack(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Column(
-                                        children: [
-                                          Row(
+
+                                var post =
+                                    posts[index].data() as Map<String, dynamic>;
+                                String postId = posts[index].id;
+                                String userId = post['userid'];
+                                if (!users.containsKey(userId)) {
+                                  return Container();
+                                }
+
+                                var user = users[userId]!;
+                                if (user['isRemoved'] == true) {
+                                  return Container();
+                                }
+
+                                String locationName = post['locationName'];
+                                String locationDescription =
+                                    post['locationDescription'];
+                                List locationImages = post['locationImages'];
+                                bool tripCompleted = post['tripCompleted'];
+                                bool isLiked = likedPosts[postId] ?? false;
+                                int likeCount = likeCounts[postId] ?? 0;
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    if (userId == currentUserId) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              CurrentUserPostDetailScreen(
+                                            postId: postId,
+                                            userId: userId,
+                                            commentCount:
+                                                commentCounts[postId] ?? 0,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              OtherUserPostDetailScreen(
+                                            postId: postId,
+                                            userId: userId,
+                                            commentCount:
+                                                commentCounts[postId] ?? 0,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Card(
+                                    elevation: 5,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(15)),
+                                    color: appTheme.secondaryColor,
+                                    child: Stack(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(12.0),
+                                          child: Column(
                                             children: [
-                                              GestureDetector(
-                                                onTap: () {
-                                                  if (userId == currentUserId) {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const UserScreen(
-                                                                  initialIndex:
-                                                                      4)),
-                                                    );
-                                                  } else {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              OtherProfilePage(
-                                                                  userId:
-                                                                      userId)),
-                                                    );
-                                                  }
-                                                },
-                                                child: Container(
-                                                  width: 50,
-                                                  height: 50,
-                                                  decoration: BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(
-                                                      color: AppColors
-                                                          .genderBorderColor(
-                                                              user['gender']),
-                                                      width: 2.0,
+                                              Row(
+                                                children: [
+                                                  GestureDetector(
+                                                    onTap: () {
+                                                      if (userId ==
+                                                          currentUserId) {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (context) =>
+                                                                  const UserScreen(
+                                                                      initialIndex:
+                                                                          4)),
+                                                        );
+                                                      } else {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (context) =>
+                                                                  OtherProfilePage(
+                                                                      userId:
+                                                                          userId)),
+                                                        );
+                                                      }
+                                                    },
+                                                    child: Container(
+                                                      width: 50,
+                                                      height: 50,
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(
+                                                          color: AppColors
+                                                              .genderBorderColor(
+                                                                  user[
+                                                                      'gender']),
+                                                          width: 2.0,
+                                                        ),
+                                                      ),
+                                                      child: CircleAvatar(
+                                                        radius: 20,
+                                                        backgroundImage:
+                                                            CachedNetworkImageProvider(
+                                                                user[
+                                                                    'userimage']),
+                                                        backgroundColor:
+                                                            Colors.transparent,
+                                                      ),
                                                     ),
                                                   ),
-                                                  child: CircleAvatar(
-                                                    radius: 20,
-                                                    backgroundImage:
-                                                        CachedNetworkImageProvider(
-                                                            user['userimage']),
-                                                    backgroundColor:
-                                                        Colors.transparent,
+                                                  const SizedBox(width: 10),
+                                                  GestureDetector(
+                                                    onTap: () {
+                                                      if (userId ==
+                                                          currentUserId) {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                const UserScreen(
+                                                                    initialIndex:
+                                                                        4),
+                                                          ),
+                                                        );
+                                                      } else {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                OtherProfilePage(
+                                                                    userId:
+                                                                        userId),
+                                                          ),
+                                                        );
+                                                      }
+                                                    },
+                                                    child: Text(
+                                                      user['username'],
+                                                      style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 16,
+                                                          color: appTheme
+                                                              .textColor),
+                                                    ),
                                                   ),
-                                                ),
+                                                ],
                                               ),
-                                              const SizedBox(width: 10),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  if (userId == currentUserId) {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const UserScreen(
-                                                                  initialIndex:
-                                                                      4)),
-                                                    );
-                                                  } else {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              OtherProfilePage(
-                                                                  userId:
-                                                                      userId)),
-                                                    );
-                                                  }
-                                                },
+                                              const SizedBox(height: 10),
+                                              ImageCarousel(
+                                                  locationImages:
+                                                      locationImages),
+                                              const SizedBox(height: 16.0),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 4.0),
                                                 child: Text(
-                                                  user['username'],
-                                                  style: const TextStyle(
+                                                  locationName,
+                                                  style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
-                                                      fontSize: 16),
+                                                      color:
+                                                          appTheme.textColor),
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 4.0,
+                                                        horizontal: 30),
+                                                child: Text(
+                                                  locationDescription,
+                                                  style: TextStyle(
+                                                      color: appTheme
+                                                          .secondaryTextColor),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              if (tripCompleted)
+                                                Center(
+                                                  child: Container(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                            top: 4.0),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 4,
+                                                        vertical: 1.0),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.green[300],
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8.0),
+                                                    ),
+                                                    child: Text(
+                                                      'Completed',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        Positioned(
+                                          bottom: 10,
+                                          left: 10,
+                                          child: Row(
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(
+                                                  isLiked
+                                                      ? Icons.favorite
+                                                      : Icons.favorite_border,
+                                                  color: isLiked
+                                                      ? Colors.red
+                                                      : appTheme
+                                                          .secondaryTextColor,
+                                                  size: 28,
+                                                ),
+                                                onPressed: () =>
+                                                    toggleLike(postId),
+                                              ),
+                                              Text(
+                                                formatCount(likeCount),
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: appTheme
+                                                      .secondaryTextColor,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 10),
-                                          ImageCarousel(
-                                              locationImages: locationImages),
-                                          const SizedBox(height: 16.0),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 4.0),
-                                            child: Text(
-                                              locationName,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold),
-                                            ),
+                                        ),
+                                        Positioned(
+                                          bottom: 10,
+                                          right: 10,
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                formatCount(
+                                                    commentCounts[postId] ?? 0),
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: appTheme
+                                                      .secondaryTextColor,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.comment_outlined,
+                                                  color: appTheme
+                                                      .secondaryTextColor,
+                                                  size: 24,
+                                                ),
+                                                onPressed: () =>
+                                                    _showCommentSheet(context,
+                                                        postId, userId),
+                                              ),
+                                            ],
                                           ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 4.0, horizontal: 30),
-                                            child: Text(
-                                              locationDescription,
-                                              style: const TextStyle(
-                                                  color: Colors.grey),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                    Positioned(
-                                      bottom: 10,
-                                      left: 10,
-                                      child: Row(
-                                        children: [
-                                          IconButton(
-                                            icon: Icon(
-                                              isLiked
-                                                  ? Icons.favorite
-                                                  : Icons.favorite_border,
-                                              color: isLiked
-                                                  ? Colors.red
-                                                  : Colors.grey,
-                                              size: 28,
-                                            ),
-                                            onPressed: () => toggleLike(postId),
-                                          ),
-                                          Text(
-                                            formatCount(likeCount),
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Positioned(
-                                      bottom: 10,
-                                      right: 10,
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            formatCount(
-                                                commentCounts[postId] ?? 0),
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.comment_outlined,
-                                              color: Colors.grey,
-                                              size: 24,
-                                            ),
-                                            onPressed: () => _showCommentSheet(
-                                                context, postId, userId),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
               ),
             ],
           ),
@@ -744,7 +887,7 @@ class HomePageState extends State<HomePage> {
                       },
                       imageIcon: const AssetImage(
                           "assets/system/iconImage/blueaiIcon.png"),
-                      buttonColor: Colors.white,
+                      buttonColor: appTheme.secondaryColor,
                       iconColor: Colors.white,
                     ),
                   ),
@@ -764,7 +907,11 @@ class HomePageState extends State<HomePage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(Icons.add, size: 28),
+                      child: const Icon(
+                        Icons.add,
+                        size: 28,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),

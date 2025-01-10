@@ -91,11 +91,16 @@ class UploadAgencyPageState extends State<UploadAgencyPage> {
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-          backgroundColor: appTheme.secondaryColor,
-          title: Text(
-            'Upload Agency',
-            style: TextStyle(color: appTheme.textColor),
-          )),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Upload Agency',
+          style: TextStyle(color: appTheme.textColor),
+        ),
+        
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
+      ),
       body: _isLoading
           ? Center(child: LoadingAnimationOverLay())
           : Padding(

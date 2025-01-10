@@ -3,10 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:provider/provider.dart';
 import '../../../../../services/post/firebase_post.dart';
 import '../../../../../services/user/user_services.dart';
 import '../../../../../utils/app_colors.dart';
+import '../../../../../utils/app_theme.dart';
 import '../../../../../utils/counder.dart';
+import '../../../../../utils/dialogues.dart';
 import '../../../../../utils/loading.dart';
 import '../../../chat_&_group/chatScreen/chating_screen.dart';
 import '../../../commentScreen/comment_screen.dart';
@@ -139,9 +142,18 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Post Details'),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Post Details',
+          style: TextStyle(
+            color: appTheme.textColor,
+          ),
+        ),
       ),
       body: FutureBuilder(
         future: Future.wait([
@@ -213,11 +225,15 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                               children: [
                                 Text(
                                   username,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 18.0,
-                                      fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.bold,
+                                      color: appTheme.textColor),
                                 ),
-                                Text('Gender: $gender'),
+                                Text(
+                                  'Gender: $gender',
+                                  style: TextStyle(color: appTheme.textColor),
+                                ),
                               ],
                             ),
                           ],
@@ -238,17 +254,17 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                             ),
                             Text(
                               formatCount(likeCount),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey,
+                                color: appTheme.textColor,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(width: 20),
                             IconButton(
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.comment_outlined,
-                                color: Colors.grey,
+                                color: appTheme.textColor,
                                 size: 30,
                               ),
                               onPressed: () => _showCommentSheet(context),
@@ -256,9 +272,9 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                             if (widget.commentCount != -1)
                               Text(
                                 formatCount(widget.commentCount),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey,
+                                  color: appTheme.textColor,
                                   fontWeight: FontWeight.bold,
                                 ),
                               )
@@ -275,10 +291,10 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                               children: [
                                 Text(
                                   'Trip to $locationName ',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: appTheme.textColor),
                                 ),
                                 const SizedBox(height: 8.0),
                                 SizedBox(
@@ -290,9 +306,9 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                                     softWrap: true,
                                     maxLines: 3,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                    ),
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        color: appTheme.secondaryTextColor),
                                   ),
                                 ),
                                 const SizedBox(height: 10.0),
@@ -301,7 +317,6 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                           ],
                         ),
                         const Divider(
-                          color: Colors.black,
                           thickness: 2.0,
                           indent: 20.0,
                           endIndent: 20.0,
@@ -311,8 +326,10 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                           Center(
                             child: Text(
                               'Trip Duration Plan : $tripDuration days',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: appTheme.textColor),
                             ),
                           ),
                           const SizedBox(height: 8.0),
@@ -353,24 +370,37 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                                         ),
                                         itemCount: planToVisitPlaces.length,
                                         itemBuilder: (context, index) {
-                                          return Container(
-                                            padding: const EdgeInsets.all(8.0),
-                                            decoration: BoxDecoration(
-                                              color: const Color.fromARGB(
-                                                  255, 244, 255, 215),
-                                              border: Border.all(
-                                                  color: Colors.grey),
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0),
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                planToVisitPlaces[index],
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
+                                          final placeName =
+                                              planToVisitPlaces[index];
+
+                                          return GestureDetector(
+                                            onTap: () {
+                                              showPlaceDialog(
+                                                  context: context,
+                                                  placeName: placeName);
+                                            },
+                                            child: Container(
+                                              padding: EdgeInsets.all(8.0),
+                                              decoration: BoxDecoration(
+                                                color: appTheme.secondaryColor,
+                                                border: Border.all(
+                                                    color: Colors.grey),
+                                                borderRadius:
+                                                    BorderRadius.circular(30.0),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  placeName.length > 15
+                                                      ? '${placeName.substring(0, 12)}...'
+                                                      : placeName,
+                                                  style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color:
+                                                          appTheme.textColor),
+                                                  textAlign: TextAlign.center,
                                                 ),
-                                                textAlign: TextAlign.center,
                                               ),
                                             ),
                                           );
@@ -430,10 +460,6 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                                             String gender =
                                                 buddy['gender'].toLowerCase();
 
-                                            Color gridColor =
-                                                AppColors.genderBorderColor(
-                                                    gender);
-
                                             return GestureDetector(
                                               onTap: () {
                                                 if (buddyUserId !=
@@ -465,7 +491,9 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
                                                       BorderRadius.circular(
                                                           10.0),
                                                 ),
-                                                color: gridColor,
+                                                color:
+                                                    AppColors.genderBorderColor(
+                                                        gender),
                                                 child: Column(
                                                   children: [
                                                     const SizedBox(

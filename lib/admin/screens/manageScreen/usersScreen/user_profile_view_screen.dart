@@ -149,6 +149,11 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
           'Profile..',
           style: TextStyle(color: appTheme.textColor),
         ),
+  
+        
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
       ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance

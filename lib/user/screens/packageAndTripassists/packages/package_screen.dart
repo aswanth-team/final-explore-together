@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:provider/provider.dart';
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/counder.dart';
 import '../../../../utils/image_swipe.dart';
 import '../../../../utils/loading.dart';
@@ -156,10 +158,12 @@ class PackagesScreenState extends State<PackagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
-      backgroundColor: Colors.red,
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: appTheme.primaryColor,
         title: TextField(
           enabled: !isOffline,
           controller: searchController,

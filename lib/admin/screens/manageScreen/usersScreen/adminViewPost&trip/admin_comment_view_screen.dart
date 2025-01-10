@@ -88,7 +88,7 @@ class AdminViewCommentSheetState extends State<AdminViewCommentSheet> {
         children: [
           ListTile(
             leading: const Icon(Icons.delete, color: Colors.red),
-            title: Text('Delete Comment',
+            title: Text('Delete',
                 style: TextStyle(color: appTheme.textColor)),
             onTap: () {
               Navigator.pop(context);

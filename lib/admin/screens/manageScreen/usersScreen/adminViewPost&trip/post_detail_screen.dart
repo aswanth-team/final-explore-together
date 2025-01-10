@@ -99,6 +99,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             color: appTheme.textColor,
           ),
         ),
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
       ),
       body: FutureBuilder(
         future: Future.wait([

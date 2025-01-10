@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../utils/app_theme.dart';
 import '../../../utils/loading.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -50,6 +52,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
 
     if (currentUserId == null) {
       return Scaffold(
@@ -64,8 +68,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
         FirebaseFirestore.instance.collection('user').doc(currentUserId);
 
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Notifications'),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Notifications',
+          style: TextStyle(color: appTheme.textColor),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: userCollection
@@ -80,8 +89,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text('No notifications available'),
+            return Center(
+              child: Text(
+                'No notifications available',
+                style: TextStyle(color: appTheme.textColor),
+              ),
             );
           }
 
@@ -98,19 +110,32 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   : null;
 
               return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                color: appTheme.secondaryColor,
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                 child: ListTile(
                   title: Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: appTheme.textColor)),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(message),
+                      Text(
+                        message,
+                        style: TextStyle(color: appTheme.secondaryTextColor),
+                      ),
                       if (date != null)
-                        Text(
-                          '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}',
-                          style:
-                              const TextStyle(color: Colors.grey, fontSize: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}',
+                              style: TextStyle(
+                                color: appTheme.secondaryTextColor,
+                                fontSize: 6,
+                              ),
+                            ),
+                          ],
                         ),
                     ],
                   ),

@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:provider/provider.dart';
 import 'dart:developer';
+import '../../../utils/app_theme.dart';
 import '../../../utils/loading.dart';
 
 class AiChatPage extends StatefulWidget {
@@ -276,10 +278,17 @@ class AiChatPageState extends State<AiChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        backgroundColor: appTheme.secondaryColor,
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
         titleSpacing: 0,
-        title: const Padding(
+        title: Padding(
           padding: EdgeInsets.only(left: 0.0),
           child: Row(
             children: [
@@ -292,9 +301,7 @@ class AiChatPageState extends State<AiChatPage> {
               SizedBox(width: 10),
               Text(
                 'Explore Ai',
-                style: TextStyle(
-                  fontSize: 18,
-                ),
+                style: TextStyle(fontSize: 18, color: appTheme.textColor),
               ),
             ],
           ),
@@ -305,68 +312,78 @@ class AiChatPageState extends State<AiChatPage> {
           children: [
             Expanded(
               child: _chatHistory.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'Start a conversation with Explore Ai',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                        style:
+                            TextStyle(fontSize: 16, color: appTheme.textColor),
                       ),
                     )
                   : _buildChatList(),
             ),
             const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: TextField(
-                        controller: _controller,
-                        decoration: InputDecoration(
-                          hintText: 'Type your message...',
-                          hintStyle: TextStyle(color: Colors.grey[600]),
-                          filled: true,
-                          fillColor: Colors.grey[200],
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 16, horizontal: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
+            Container(
+              color: appTheme.secondaryColor,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: TextField(
+                          controller: _controller,
+                          decoration: InputDecoration(
+                            hintText: 'Type a message...',
+                            hintStyle: TextStyle(
+                                color: appTheme.secondaryTextColor,
+                                fontSize: 16),
+                            filled: true,
+                            fillColor: appTheme.primaryColor,
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 16, horizontal: 16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide:
-                                const BorderSide(color: Colors.blueAccent),
-                          ),
+                          minLines: 1,
+                          maxLines: 5,
+                          onSubmitted: (_) {
+                            final message = _controller.text;
+                            _controller.clear();
+                            _sendMessage(message);
+                          },
+                          style: TextStyle(color: appTheme.textColor),
                         ),
-                        minLines: 1,
-                        maxLines: 5,
-                        onSubmitted: (_) {
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.send,
+                          color: Colors.blueAccent,
+                        ),
+                        onPressed: () {
                           final message = _controller.text;
                           _controller.clear();
                           _sendMessage(message);
                         },
+                        splashColor: Colors.blueAccent.withOpacity(0.3),
+                        splashRadius: 25,
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.send,
-                        color: Colors.blueAccent,
-                      ),
-                      onPressed: () {
-                        final message = _controller.text;
-                        _controller.clear();
-                        _sendMessage(message);
-                      },
-                      splashColor: Colors.blueAccent.withOpacity(0.3),
-                      splashRadius: 25,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

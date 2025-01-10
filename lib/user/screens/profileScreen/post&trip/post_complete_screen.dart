@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/dialogues.dart';
 
 class PostCompleteScreen extends StatefulWidget {
@@ -277,8 +279,17 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Complete Trip Details')),
+      backgroundColor: appTheme.primaryColor,
+      appBar: AppBar(
+        title: Text(
+          'Complete Trip Details',
+          style: TextStyle(color: appTheme.textColor),
+        ),
+        backgroundColor: appTheme.secondaryColor,
+      ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'Post_complete',
         onPressed: isLoading ? null : _onComplete,
@@ -306,46 +317,79 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
                   allowHalfRating: true,
                   itemBuilder: (context, _) =>
                       const Icon(Icons.star, color: Colors.yellow),
+                  unratedColor: appTheme.secondaryColor,
                   onRatingUpdate: (rating) =>
                       setState(() => tripRating = rating),
                 ),
                 const SizedBox(height: 10),
                 if (packageId != null) ...[
                   CheckboxListTile(
-                    title: const Text('Trip completed from our package'),
+                    title: Text(
+                      'Completed from our package',
+                      style: TextStyle(color: appTheme.textColor),
+                    ),
                     value: isFromPackage,
                     onChanged: (bool? value) {
                       setState(() {
                         isFromPackage = value ?? false;
                       });
                     },
+                    activeColor:
+                        Colors.blue, // Color for the checkbox when selected
+                    checkColor: Colors.white, // Checkmark color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                          4), // Rounded corners for the checkbox
+                    ),
                     controlAffinity:
                         ListTileControlAffinity.leading, // Checkbox on the left
                   ),
                   if (isFromPackage)
-                    TextField(
-                      controller: commentController,
-                      decoration: const InputDecoration(
-                        labelText: 'Package Feedback',
-                        hintText: 'Share your experience with this package',
+                    SizedBox(
+                      width: 350,
+                      child: TextField(
+                        controller: commentController,
+                        decoration: InputDecoration(
+                          labelText: 'Package Feedback',
+                          hintText: 'Share your experience with this package',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          labelStyle:
+                              TextStyle(color: appTheme.secondaryTextColor),
+                        ),
+                        minLines: 1,
+                        maxLines: 3,
+                        style: TextStyle(color: appTheme.textColor),
                       ),
-                      maxLines: 3,
                     ),
                 ],
-                TextField(
-                  controller: tripBuddiesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Trip Buddies (comma separated)',
-                  ),
-                  onChanged: (value) {
-                    if (value.endsWith(",") || value.endsWith("\n")) {
+                SizedBox(
+                  height: 10,
+                ),
+                SizedBox(
+                  width: 350,
+                  child: TextField(
+                    controller: tripBuddiesController,
+                    decoration: InputDecoration(
+                      labelText: 'Trip Buddies (comma separated)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      labelStyle: TextStyle(color: appTheme.secondaryTextColor),
+                    ),
+                    style: TextStyle(color: appTheme.textColor),
+                    onChanged: (value) {
+                      if (value.endsWith(",") || value.endsWith("\n")) {
+                        _handleTagInput(
+                            value, tripBuddiesController, tripBuddies);
+                      }
+                    },
+                    onSubmitted: (value) {
                       _handleTagInput(
                           value, tripBuddiesController, tripBuddies);
-                    }
-                  },
-                  onSubmitted: (value) {
-                    _handleTagInput(value, tripBuddiesController, tripBuddies);
-                  },
+                    },
+                  ),
                 ),
                 SizedBox(height: 10),
                 Container(
@@ -404,29 +448,39 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
-                      child: TextField(
-                        controller: visitedPlacesController,
-                        decoration: const InputDecoration(
-                          labelText: 'Visited Places (comma separated)',
+                      child: SizedBox(
+                        width: 250,
+                        child: TextField(
+                          controller: visitedPlacesController,
+                          decoration: InputDecoration(
+                            labelText: 'Visited Places (comma separated)',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            labelStyle:
+                                TextStyle(color: appTheme.secondaryTextColor),
+                          ),
+                          style: TextStyle(color: appTheme.textColor),
+                          enabled: !visitedPlacesDisabled,
+                          onChanged: (value) {
+                            if (value.endsWith(",") || value.endsWith("\n")) {
+                              _handleLocTagInput(value, visitedPlacesController,
+                                  visitedPlaces);
+                              _checkVisitedPlacesLimit();
+                            }
+                          },
+                          onSubmitted: (value) {
+                            if (!visitedPlacesDisabled) {
+                              _handleLocTagInput(value, visitedPlacesController,
+                                  visitedPlaces);
+                              _checkVisitedPlacesLimit();
+                            }
+                          },
                         ),
-                        enabled: !visitedPlacesDisabled,
-                        onChanged: (value) {
-                          if (value.endsWith(",") || value.endsWith("\n")) {
-                            _handleLocTagInput(
-                                value, visitedPlacesController, visitedPlaces);
-                            _checkVisitedPlacesLimit();
-                          }
-                        },
-                        onSubmitted: (value) {
-                          if (!visitedPlacesDisabled) {
-                            _handleLocTagInput(
-                                value, visitedPlacesController, visitedPlaces);
-                            _checkVisitedPlacesLimit();
-                          }
-                        },
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -485,7 +539,7 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
                 SizedBox(height: 10),
                 Container(
                   height: 200,
-                  width: 400,
+                  width: 350,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey),
                     borderRadius: BorderRadius.circular(8),
@@ -493,45 +547,92 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
                   padding: EdgeInsets.all(4),
                   child: SingleChildScrollView(
                     child: Wrap(
+                      spacing: 12.0,
+                      runSpacing: 12.0,
                       children: visitedPlaces.map((tag) {
                         return GestureDetector(
                           onTap: () => showPlaceDialog(
                             context: context,
                             placeName: tag,
                           ),
-                          child: Chip(
-                            label: ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: 100),
-                              child: Text(
-                                tag,
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
+                          child: Container(
+                            constraints: BoxConstraints(maxWidth: 150),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
                             ),
-                            deleteIcon: const Icon(Icons.close),
-                            onDeleted: () => _removeLocTag(tag, visitedPlaces),
+                            decoration: BoxDecoration(
+                              color: appTheme.secondaryColor,
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    tag,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: appTheme.textColor,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                GestureDetector(
+                                  onTap: () =>
+                                      _removeLocTag(tag, visitedPlaces),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 20,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       }).toList(),
                     ),
                   ),
                 ),
-                TextField(
-                  decoration:
-                      const InputDecoration(labelText: 'Trip Experience'),
-                  onChanged: (value) => tripFeedback = value,
-                ),
-                TextField(
-                  controller: tripDurationController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Trip Duration (in Days)',
+                SizedBox(height: 10),
+                SizedBox(
+                  width: 350,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Trip Experience',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      labelStyle: TextStyle(color: appTheme.secondaryTextColor),
+                    ),
+                    style: TextStyle(color: appTheme.textColor),
+                    onChanged: (value) => tripFeedback = value,
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      tripCompletedDuration = int.tryParse(value);
-                    });
-                  },
+                ),
+                SizedBox(height: 10),
+                SizedBox(
+                  width: 350,
+                  child: TextField(
+                    controller: tripDurationController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Trip Duration (in Days)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      labelStyle: TextStyle(color: appTheme.secondaryTextColor),
+                    ),
+                    style: TextStyle(color: appTheme.textColor),
+                    onChanged: (value) {
+                      setState(() {
+                        tripCompletedDuration = int.tryParse(value);
+                      });
+                    },
+                  ),
                 ),
                 SizedBox(height: 40),
               ],

@@ -285,6 +285,7 @@ class SentMessagePageState extends State<SentMessagePage> {
                   color: Colors.blueAccent,
                 ),
               ),
+              style: TextStyle(color: appTheme.textColor),
             ),
             const SizedBox(height: 10),
             TextFormField(
@@ -302,6 +303,7 @@ class SentMessagePageState extends State<SentMessagePage> {
                   color: Colors.blueAccent,
                 ),
               ),
+              style: TextStyle(color: appTheme.textColor),
             ),
             SizedBox(height: 20),
             ElevatedButton(

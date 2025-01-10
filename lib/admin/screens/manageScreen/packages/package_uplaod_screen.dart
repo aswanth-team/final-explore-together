@@ -272,6 +272,18 @@ class PackageUploaderState extends State<PackageUploader> {
     final appTheme = themeManager.currentTheme;
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
+      appBar: AppBar(
+        backgroundColor: appTheme.secondaryColor,
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
+        title: Text(
+          'Upload Agency',
+          style: TextStyle(
+            color: appTheme.textColor,
+          ),
+        ),
+      ),
       body: Stack(
         children: [
           Center(
@@ -282,6 +294,7 @@ class PackageUploaderState extends State<PackageUploader> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    const SizedBox(height: 60),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: _imagePickerWidget(),
@@ -308,7 +321,8 @@ class PackageUploaderState extends State<PackageUploader> {
                     SizedBox(
                       width: 350,
                       child: TextFormField(
-                        keyboardType: TextInputType.number,
+                        keyboardType: TextInputType
+                            .phone, // Updated for better semantic use
                         decoration: InputDecoration(
                           labelText: 'Contact Number',
                           border: OutlineInputBorder(
@@ -317,9 +331,18 @@ class PackageUploaderState extends State<PackageUploader> {
                           labelStyle:
                               TextStyle(color: appTheme.secondaryTextColor),
                         ),
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Enter contact number'
-                            : null,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Enter contact number';
+                          }
+                          if (!RegExp(r'^\d+$').hasMatch(value)) {
+                            return 'Enter a valid numeric contact number';
+                          }
+                          if (value.length < 7 || value.length > 15) {
+                            return 'Contact number must be between 7 and 15 digits';
+                          }
+                          return null;
+                        },
                         onSaved: (value) => _phoneNumber = value,
                         style: TextStyle(color: appTheme.textColor),
                       ),
@@ -330,7 +353,7 @@ class PackageUploaderState extends State<PackageUploader> {
                       child: TextFormField(
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Package Prize',
+                          labelText: 'Package Price',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -339,17 +362,15 @@ class PackageUploaderState extends State<PackageUploader> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Enter package prize';
+                            return 'Enter package price';
                           }
-                          if (int.tryParse(value) == null ||
-                              int.parse(value) <= 0) {
-                            return 'Enter a valid prize';
+                          final parsedValue = int.tryParse(value);
+                          if (parsedValue == null || parsedValue <= 0) {
+                            return 'Enter a valid positive price';
                           }
                           return null;
                         },
-                        onSaved: (value) {
-                          _prize = int.tryParse(value!);
-                        },
+                        onSaved: (value) => _prize = int.tryParse(value!),
                         style: TextStyle(color: appTheme.textColor),
                       ),
                     ),

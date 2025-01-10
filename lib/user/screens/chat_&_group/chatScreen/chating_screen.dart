@@ -1,8 +1,11 @@
+import 'package:explore_together/utils/loading.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../../../../utils/app_theme.dart';
 import 'chat_utils.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -70,11 +73,19 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _checkConnectivity() async {
+    if (!mounted) return; // Add early return if widget is not mounted
+
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {});
-      setState(() => isOffline = false);
+      if (mounted) {
+        // Check if mounted before calling setState
+        setState(() => isOffline = false);
+      }
     } catch (e) {
-      setState(() => isOffline = true);
+      if (mounted) {
+        // Check if mounted before calling setState
+        setState(() => isOffline = true);
+      }
     }
   }
 
@@ -136,23 +147,27 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           userFuture,
           onlineStatusFuture,
         ]);
-
-        setState(() {
-          userDetails =
-              (results[0] as DocumentSnapshot).data() as Map<String, dynamic>?;
-          isUserOnline = results[1] as bool;
-        });
+        if (mounted) {
+          setState(() {
+            userDetails = (results[0] as DocumentSnapshot).data()
+                as Map<String, dynamic>?;
+            isUserOnline = results[1] as bool;
+          });
+        }
         _setupMessageListener();
       }
-
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     } catch (e) {
       print("Error initializing chat: $e");
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -204,9 +219,11 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       final snapshot = await query.get();
 
       if (snapshot.docs.isEmpty) {
-        setState(() {
-          _hasMoreMessages = false;
-        });
+        if (mounted) {
+          setState(() {
+            _hasMoreMessages = false;
+          });
+        }
         return;
       }
 
@@ -330,8 +347,15 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        backgroundColor: appTheme.secondaryColor,
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
         title: Row(
           children: [
             userDetails?['userimage'] != null
@@ -347,26 +371,21 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(userDetails?['username'] ?? 'Loading...'),
+                Text(
+                  userDetails?['username'] ?? 'Loading...',
+                  style: TextStyle(color: appTheme.textColor),
+                ),
                 Row(
                   children: [
                     Text(
-                      isOffline
-                          ? 'Offline Mode'
-                          : (isUserOnline ? 'Online' : 'Offline'),
+                      isUserOnline ? 'Online' : 'Offline',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isOffline
-                            ? Colors.orange
-                            : (isUserOnline ? Colors.green : Colors.grey),
+                        color: isUserOnline
+                            ? Colors.green
+                            : appTheme.secondaryTextColor,
                       ),
                     ),
-                    if (isOffline)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4),
-                        child: Icon(Icons.offline_bolt,
-                            size: 14, color: Colors.orange),
-                      ),
                   ],
                 ),
               ],
@@ -375,7 +394,7 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         ),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? LoadingAnimation()
           : GestureDetector(
               onTap: _markMessagesAsSeen,
               child: Column(
@@ -384,13 +403,10 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     child: StreamBuilder<List<Map<String, dynamic>>>(
                       stream: _messagesController.stream,
                       builder: (context, snapshot) {
-                        // Check if we're still in the initial loading state
                         if (!snapshot.hasData && isLoading) {
                           return const Center(
                               child: CircularProgressIndicator());
                         }
-
-                        // If we have no data after loading is complete, show the empty state
                         if (!snapshot.hasData || snapshot.data!.isEmpty) {
                           return Center(
                             child: Column(
@@ -406,7 +422,7 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                                   'No messages yet',
                                   style: TextStyle(
                                     fontSize: 18,
-                                    color: Colors.grey[600],
+                                    color: appTheme.secondaryTextColor,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -415,7 +431,7 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                                   'Start the conversation!',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey[500],
+                                    color: appTheme.secondaryTextColor,
                                   ),
                                 ),
                               ],
@@ -469,51 +485,61 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     ),
                   ),
                   const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: TextField(
-                              controller: _messageController,
-                              decoration: InputDecoration(
-                                hintText: 'Type a message...',
-                                hintStyle: TextStyle(color: Colors.grey[600]),
-                                filled: true,
-                                fillColor: Colors.grey[200],
-                                contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 16, horizontal: 16),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: BorderSide.none,
+                  Container(
+                    color: appTheme.secondaryColor,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              child: TextField(
+                                controller: _messageController,
+                                decoration: InputDecoration(
+                                  hintText: 'Type a message...',
+                                  hintStyle: TextStyle(
+                                      color: appTheme.secondaryTextColor,
+                                      fontSize: 16),
+                                  filled: true,
+                                  fillColor: appTheme.primaryColor,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 16, horizontal: 16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: BorderSide.none,
+                                  ),
                                 ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: const BorderSide(
-                                      color: Colors.blueAccent),
-                                ),
+                                minLines: 1,
+                                maxLines: 5,
+                                onSubmitted: (_) => _sendMessage(),
+                                style: TextStyle(color: appTheme.textColor),
                               ),
-                              minLines: 1,
-                              maxLines: 5,
-                              onSubmitted: (_) => _sendMessage(),
                             ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.send,
-                              color: Colors.blueAccent,
+                          Padding(
+                            padding: const EdgeInsets.only(left: 2),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.send,
+                                color: Colors.blueAccent,
+                              ),
+                              onPressed: _sendMessage,
+                              splashColor: Colors.blueAccent.withOpacity(0.3),
+                              splashRadius: 25,
                             ),
-                            onPressed: _sendMessage,
-                            splashColor: Colors.blueAccent.withOpacity(0.3),
-                            splashRadius: 25,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -564,6 +590,8 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     final DateTime messageDate = createdAt is Timestamp
         ? createdAt.toDate()
         : DateTime.fromMillisecondsSinceEpoch(createdAt ?? 0);
@@ -601,9 +629,10 @@ class ChatBubble extends StatelessWidget {
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-            constraints: const BoxConstraints(maxWidth: 300),
+            constraints: BoxConstraints(maxWidth: 300),
             decoration: BoxDecoration(
-              color: isSentByCurrentUser ? Colors.blue : Colors.grey.shade300,
+              color:
+                  isSentByCurrentUser ? Colors.blue : appTheme.secondaryColor,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(20),
                 topRight: const Radius.circular(20),
@@ -618,7 +647,8 @@ class ChatBubble extends StatelessWidget {
                 Text(
                   text,
                   style: TextStyle(
-                    color: isSentByCurrentUser ? Colors.white : Colors.black,
+                    color:
+                        isSentByCurrentUser ? Colors.white : appTheme.textColor,
                     fontSize: 16,
                   ),
                 ),
@@ -626,8 +656,9 @@ class ChatBubble extends StatelessWidget {
                 Text(
                   formattedTime,
                   style: TextStyle(
-                    color:
-                        isSentByCurrentUser ? Colors.white70 : Colors.black54,
+                    color: isSentByCurrentUser
+                        ? Colors.white70
+                        : appTheme.secondaryTextColor,
                     fontSize: 12,
                   ),
                 ),

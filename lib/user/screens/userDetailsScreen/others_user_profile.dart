@@ -3,8 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/app_colors.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/counder.dart';
 import '../../../utils/loading.dart';
 import '../BuddyScreen/buddying_screen.dart';
@@ -176,11 +178,19 @@ class OtherProfilePageState extends State<OtherProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Profile..'),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Profile..',
+          style: TextStyle(color: appTheme.textColor),
+        ),
         actions: [
           PopupMenuButton<String>(
+            color: appTheme.secondaryColor,
             onSelected: (value) {
               if (value == 'Report') {
                 showDialog(
@@ -194,13 +204,19 @@ class OtherProfilePageState extends State<OtherProfilePage> {
             },
             itemBuilder: (BuildContext context) {
               return [
-                const PopupMenuItem<String>(
+                PopupMenuItem<String>(
                   value: 'Report',
-                  child: Text('Report'),
+                  child: Text(
+                    'Report',
+                    style: TextStyle(color: appTheme.textColor),
+                  ),
                 ),
               ];
             },
-            icon: const Icon(Icons.more_vert),
+            icon: Icon(
+              Icons.more_vert,
+              color: appTheme.secondaryTextColor,
+            ),
             offset: const Offset(0, 50),
           ),
         ],
@@ -224,7 +240,11 @@ class OtherProfilePageState extends State<OtherProfilePage> {
               ],
             );
           } else if (snapshot.hasError) {
-            return const Center(child: Text("Error loading profile data"));
+            return Center(
+                child: Text(
+              "Error loading profile data",
+              style: TextStyle(color: appTheme.textColor),
+            ));
           } else if (snapshot.hasData) {
             final profileData = snapshot.data?.data();
             var userImage = profileData!['userimage'];
@@ -245,20 +265,18 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                   backgroundColor: Colors.transparent,
                                   child: GestureDetector(
                                     onTap: () {
-                                      Navigator.of(context)
-                                          .pop(); // Close the dialog on tap
+                                      Navigator.of(context).pop();
                                     },
                                     child: InteractiveViewer(
                                       child: Container(
                                         decoration: BoxDecoration(
                                           border: Border.all(
                                             color: AppColors.genderBorderColor(
-                                                profileData['gender'] ??
-                                                    ''), // Use gender to determine border color
-                                            width: 1.0, // Set border width
+                                                profileData['gender'] ?? ''),
+                                            width: 1.0,
                                           ),
-                                          borderRadius: BorderRadius.circular(
-                                              8.0), // Optional: Rounded corners
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
                                         ),
                                         child: ClipRRect(
                                           borderRadius:
@@ -323,17 +341,18 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                         children: [
                                           Text(
                                             formatCount(buddiesCount),
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: appTheme.textColor),
                                           ),
-                                          const Text(
+                                          Text(
                                             'Buddies',
                                             style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.normal,
-                                            ),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.normal,
+                                                color: appTheme
+                                                    .secondaryTextColor),
                                           ),
                                         ],
                                       ),
@@ -361,17 +380,18 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                         children: [
                                           Text(
                                             formatCount(buddyingCount),
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: appTheme.textColor),
                                           ),
-                                          const Text(
+                                          Text(
                                             'Buddying',
                                             style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.normal,
-                                            ),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.normal,
+                                                color: appTheme
+                                                    .secondaryTextColor),
                                           ),
                                         ],
                                       ),
@@ -385,17 +405,17 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                     children: [
                                       Text(
                                         formatCount(totalPosts),
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: appTheme.textColor),
                                       ),
-                                      const Text(
+                                      Text(
                                         'Posts',
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.normal,
-                                        ),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.normal,
+                                            color: appTheme.secondaryTextColor),
                                       ),
                                     ],
                                   ),
@@ -407,17 +427,17 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                     children: [
                                       Text(
                                         formatCount(completedPosts),
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: appTheme.textColor),
                                       ),
-                                      const Text(
+                                      Text(
                                         'Completed',
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.normal,
-                                        ),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.normal,
+                                            color: appTheme.secondaryTextColor),
                                       ),
                                     ],
                                   ),
@@ -436,16 +456,19 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                       children: [
                         Text(
                           profileData['fullname'],
-                          style: const TextStyle(
-                              fontSize: 17, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: appTheme.textColor),
                         ),
-                        // const SizedBox(height: 8),
-                        // Text('DOB: ${profileData['dob']}'),
-                        // const SizedBox(height: 8),
-                        //  Text('Gender: ${profileData['gender']}'),
                         const SizedBox(height: 8),
+                        //Text('DOB: ${profileData['dob']}'),
+                        // const SizedBox(height: 8),
+                        // Text('Gender: ${profileData['gender']}'),
+                        // const SizedBox(height: 16),
                         Text(profileData['userbio'] ?? '',
-                            style: const TextStyle(fontSize: 12)),
+                            style: TextStyle(
+                                fontSize: 12, color: appTheme.textColor)),
                       ],
                     ),
                   ),
@@ -467,15 +490,17 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                         ),
                       if ((profileData['instagram']?.isNotEmpty ?? false))
                         const SizedBox(width: 6),
+
+                      // Twitter (X) Icon
                       if ((profileData['x']?.isNotEmpty ?? false))
                         IconButton(
                           onPressed: () {
                             final twitterLink = profileData['x'];
                             launchUrl(Uri.parse(twitterLink));
                           },
-                          icon: const FaIcon(
+                          icon: FaIcon(
                             FontAwesomeIcons.x,
-                            color: Color.fromARGB(255, 0, 0, 0),
+                            color: appTheme.textColor,
                             size: 15,
                           ),
                           tooltip: 'X',
@@ -514,8 +539,8 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                 child: ElevatedButton(
                                   onPressed: _toggleBuddy,
                                   style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.black,
-                                    backgroundColor: Colors.white,
+                                    foregroundColor: appTheme.textColor,
+                                    backgroundColor: appTheme.secondaryColor,
                                     side: const BorderSide(
                                       color: Colors.black,
                                       width: 0.3,
@@ -555,8 +580,8 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.black,
-                                    backgroundColor: Colors.white,
+                                    foregroundColor: appTheme.textColor,
+                                    backgroundColor: appTheme.secondaryColor,
                                     side: const BorderSide(
                                       color: Colors.black,
                                       width: 0.3,
@@ -587,13 +612,19 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                   showPosts = true;
                                 });
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.grid_on,
-                                color: Colors.black,
+                                color: showPosts
+                                    ? Colors.blue
+                                    : appTheme.textColor,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Posts',
-                                style: TextStyle(color: Colors.black),
+                                style: TextStyle(
+                                  color: showPosts
+                                      ? Colors.blue
+                                      : appTheme.textColor,
+                                ),
                               ),
                             ),
                             if (showPosts)
@@ -613,20 +644,26 @@ class OtherProfilePageState extends State<OtherProfilePage> {
                                   showPosts = false;
                                 });
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.photo_album,
-                                color: Colors.black,
+                                color: !showPosts
+                                    ? Colors.blue
+                                    : appTheme.textColor,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Trip Images',
-                                style: TextStyle(color: Colors.black),
+                                style: TextStyle(
+                                  color: !showPosts
+                                      ? Colors.blue
+                                      : appTheme.textColor,
+                                ),
                               ),
                             ),
                             if (!showPosts)
                               Container(
                                 height: 2,
                                 width: 50,
-                                color: Colors.black,
+                                color: Colors.blue,
                               ),
                           ],
                         ),
@@ -641,7 +678,8 @@ class OtherProfilePageState extends State<OtherProfilePage> {
               ),
             );
           } else {
-            return const Text("No data available");
+            return Text("No data available",
+                style: TextStyle(color: appTheme.textColor));
           }
         },
       ),

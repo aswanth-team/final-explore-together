@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../../services/cloudinary_upload.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/loading.dart';
 
 class ImageUploader extends StatefulWidget {
@@ -84,22 +86,27 @@ class _ImageUploaderState extends State<ImageUploader> {
     } catch (e) {
       print('Error saving to Firestore: $e');
     } finally {
-      Navigator.pop(context); // Close the bottom sheet
-      Future.delayed(Duration(milliseconds: 300), () {
-        Navigator.pop(context); // Go back to the previous screen
-      });
+      if (mounted) {
+        Navigator.pop(context);
+        Future.delayed(Duration(milliseconds: 300), () {
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        });
+      }
     }
   }
 
   Widget _buildLoadingOverlay() {
-    return _isUploading
-        ? LoadingAnimationOverLay()
-        : SizedBox.shrink(); // If not uploading, return an empty widget
+    return _isUploading ? LoadingAnimationOverLay() : SizedBox.shrink();
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       body: Stack(
         children: [
           Padding(
@@ -117,7 +124,7 @@ class _ImageUploaderState extends State<ImageUploader> {
                         height: 200,
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey),
-                          color: Colors.grey[300],
+                          color: appTheme.secondaryColor,
                         ),
                         child: _selectedImage != null
                             ? FittedBox(
@@ -128,6 +135,7 @@ class _ImageUploaderState extends State<ImageUploader> {
                                 child: Text(
                                   'Tap to select an image',
                                   textAlign: TextAlign.center,
+                                  style: TextStyle(color: appTheme.textColor),
                                 ),
                               ),
                       ),
@@ -141,17 +149,14 @@ class _ImageUploaderState extends State<ImageUploader> {
                       : _uploadImage,
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.green, // Text color
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12), // Padding
+                    backgroundColor: Colors.green,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8), // Rounded corners
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    elevation: 4, // Shadow elevation
-                    disabledBackgroundColor:
-                        Colors.grey, // Disabled state background
-                    disabledForegroundColor:
-                        Colors.white, // Disabled state text color
+                    elevation: 4,
+                    disabledBackgroundColor: Colors.grey,
+                    disabledForegroundColor: Colors.white,
                   ),
                   child: Text(
                     'Upload',
@@ -167,7 +172,3 @@ class _ImageUploaderState extends State<ImageUploader> {
     );
   }
 }
-
-void main() => runApp(const MaterialApp(
-      home: ImageUploader(),
-    ));

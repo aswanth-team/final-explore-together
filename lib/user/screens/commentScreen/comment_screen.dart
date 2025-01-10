@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/counder.dart';
 
 class CommentSheet extends StatefulWidget {
@@ -130,15 +132,21 @@ class CommentSheetState extends State<CommentSheet> {
   }
 
   void _showCommentOptions(Map<String, dynamic> comment) {
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+    final appTheme = themeManager.currentTheme;
     showModalBottomSheet(
+      backgroundColor: appTheme.secondaryColor,
       context: context,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (comment['commentBy'] == currentUserId)
             ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit Comment'),
+              leading: Icon(
+                Icons.edit,
+                color: Colors.blue,
+              ),
+              title: Text('Edit', style: TextStyle(color: appTheme.textColor)),
               onTap: () {
                 Navigator.pop(context);
                 setState(() {
@@ -151,8 +159,9 @@ class CommentSheetState extends State<CommentSheet> {
           if (comment['commentBy'] == currentUserId ||
               widget.postUserId == currentUserId)
             ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Delete Comment'),
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title:
+                  Text('Delete', style: TextStyle(color: appTheme.textColor)),
               onTap: () {
                 Navigator.pop(context);
                 _deleteComment(comment['id']);
@@ -165,10 +174,12 @@ class CommentSheetState extends State<CommentSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: appTheme.primaryColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -176,7 +187,7 @@ class CommentSheetState extends State<CommentSheet> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: appTheme.secondaryColor,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(20)),
             ),
@@ -185,26 +196,26 @@ class CommentSheetState extends State<CommentSheet> {
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Comments:',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: appTheme.textColor),
                     ),
                     const SizedBox(width: 20),
                     Text(
                       formatCount(comments.length),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w400,
-                        color: Colors.grey,
+                        color: appTheme.secondaryTextColor,
                       ),
                     ),
                   ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close, color: appTheme.secondaryTextColor),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -222,13 +233,15 @@ class CommentSheetState extends State<CommentSheet> {
                         backgroundImage:
                             CachedNetworkImageProvider(comment['userimage']),
                       ),
-                      title: Text(comment['username']),
+                      title: Text(comment['username'],
+                          style: TextStyle(color: appTheme.textColor)),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             comment['comment'],
-                            style: const TextStyle(fontSize: 14),
+                            style: TextStyle(
+                                fontSize: 14, color: appTheme.textColor),
                             softWrap: true,
                             overflow: TextOverflow.visible,
                           ),
@@ -238,7 +251,7 @@ class CommentSheetState extends State<CommentSheet> {
                               (comment['commentedTime'] as Timestamp).toDate(),
                             ),
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: appTheme.secondaryTextColor,
                               fontSize: 12,
                             ),
                           ),
@@ -251,7 +264,8 @@ class CommentSheetState extends State<CommentSheet> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.more_vert),
+                                  icon: Icon(Icons.more_vert,
+                                      color: appTheme.secondaryTextColor),
                                   onPressed: () => _showCommentOptions(comment),
                                 ),
                               ],
@@ -283,9 +297,10 @@ class CommentSheetState extends State<CommentSheet> {
                         hintText: isEditing
                             ? 'Edit your comment...'
                             : 'Add a comment...',
-                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        hintStyle:
+                            TextStyle(color: appTheme.secondaryTextColor),
                         filled: true,
-                        fillColor: Colors.grey[200],
+                        fillColor: appTheme.secondaryColor,
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 16, horizontal: 16),
                         border: OutlineInputBorder(
@@ -298,6 +313,7 @@ class CommentSheetState extends State<CommentSheet> {
                               const BorderSide(color: Colors.blueAccent),
                         ),
                       ),
+                      style: TextStyle(color: appTheme.textColor),
                       minLines: 1,
                       maxLines: 5,
                       keyboardType: TextInputType.multiline,
@@ -307,7 +323,10 @@ class CommentSheetState extends State<CommentSheet> {
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: IconButton(
-                    icon: Icon(isEditing ? Icons.check : Icons.send),
+                    icon: Icon(
+                      isEditing ? Icons.check : Icons.send,
+                      color: isEditing ? Colors.green : Colors.blue,
+                    ),
                     onPressed: () {
                       if (isEditing && editingCommentId != null) {
                         _editComment(
