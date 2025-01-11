@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/loading.dart';
 
 class TravelAgencyPage extends StatefulWidget {
@@ -74,19 +76,26 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
   @override
   Widget build(BuildContext context) {
     final List<String> categories = getCategories();
-
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        backgroundColor: appTheme.primaryColor,
         toolbarHeight: kToolbarHeight + 10.0,
         title: TextField(
           controller: _searchController,
           onChanged: (query) => _filterAgencies(query),
           decoration: InputDecoration(
-            hintText: 'Search here...',
-            prefixIcon: const Icon(Icons.search),
+            filled: true,
+            fillColor: appTheme.primaryColor,
+            hintText: 'Search...',
+            hintStyle:
+                TextStyle(color: appTheme.secondaryTextColor, fontSize: 16),
+            prefixIcon: Icon(Icons.search, color: appTheme.secondaryTextColor),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.clear),
+                    icon: Icon(Icons.clear, color: appTheme.secondaryTextColor),
                     onPressed: () {
                       _searchController.clear();
                       _filterAgencies('');
@@ -97,17 +106,18 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
                 const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.blue, width: 2),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.blue, width: 2),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.grey, width: 1),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
           ),
+          style: TextStyle(color: appTheme.textColor),
         ),
       ),
       body: Column(
@@ -129,13 +139,13 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16.0, vertical: 8.0),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue : Colors.grey[200],
+                      color: isSelected ? Colors.blue : appTheme.secondaryColor,
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
                       category,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
+                        color: isSelected ? Colors.white : appTheme.textColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -186,7 +196,7 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
                       padding: const EdgeInsets.all(16.0),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10.0),
-                        color: Colors.grey[100],
+                        color: appTheme.secondaryColor,
                         boxShadow: [
                           BoxShadow(
                             blurRadius: 4,
@@ -211,8 +221,10 @@ class TravelAgencyPageState extends State<TravelAgencyPage> {
                           Expanded(
                             child: Text(
                               agency['agencyName']!,
-                              style: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: appTheme.textColor),
                             ),
                           ),
                           const Icon(Icons.arrow_forward, color: Colors.blue),

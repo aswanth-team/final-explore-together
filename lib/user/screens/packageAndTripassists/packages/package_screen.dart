@@ -185,23 +185,17 @@ class PackagesScreenState extends State<PackagesScreen> {
                 },
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: appTheme.primaryColor,
             hintText: isOffline
                 ? 'You are offline'
                 : 'Search by location or places...',
             hintStyle: isOffline
                 ? TextStyle(color: Colors.red[500], fontSize: 16)
-                : TextStyle(color: Colors.grey[500], fontSize: 16),
-            prefixIcon: Icon(
-              Icons.search,
-              color: Colors.grey[600],
-            ),
+                : TextStyle(color: appTheme.secondaryTextColor, fontSize: 16),
+            prefixIcon: Icon(Icons.search, color: appTheme.secondaryTextColor),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
-                    icon: Icon(
-                      Icons.clear,
-                      color: Colors.grey[600],
-                    ),
+                    icon: Icon(Icons.clear, color: appTheme.secondaryTextColor),
                     onPressed: isOffline
                         ? null
                         : () {
@@ -217,17 +211,18 @@ class PackagesScreenState extends State<PackagesScreen> {
                 const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.blue, width: 2),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.blue, width: 2),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.grey, width: 1),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
           ),
+          style: TextStyle(color: appTheme.textColor),
         ),
       ),
       body: Stack(
@@ -237,10 +232,11 @@ class PackagesScreenState extends State<PackagesScreen> {
               : RefreshIndicator(
                   onRefresh: isOffline ? () async {} : _fetchPackages,
                   child: packages.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             'No packages available',
-                            style: TextStyle(fontSize: 18),
+                            style: TextStyle(
+                                fontSize: 18, color: appTheme.textColor),
                           ),
                         )
                       : GridView.builder(
@@ -273,6 +269,7 @@ class PackagesScreenState extends State<PackagesScreen> {
                                 );
                               },
                               child: Card(
+                                color: appTheme.secondaryColor,
                                 margin: const EdgeInsets.all(8),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,25 +287,27 @@ class PackagesScreenState extends State<PackagesScreen> {
                                         children: [
                                           Text(
                                             locationName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                                color: appTheme.textColor),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             'Prize: ₹$prize',
                                             style: TextStyle(
-                                              color: Colors.grey[600],
+                                              color:
+                                                  appTheme.secondaryTextColor,
                                             ),
                                           ),
                                           const SizedBox(height: 8),
                                           Row(
                                             children: [
                                               IconButton(
-                                                icon: const Icon(
+                                                icon: Icon(
                                                   Icons.comment_outlined,
-                                                  color: Colors.grey,
+                                                  color: appTheme
+                                                      .secondaryTextColor,
                                                   size: 24,
                                                 ),
                                                 onPressed: () =>
@@ -319,9 +318,10 @@ class PackagesScreenState extends State<PackagesScreen> {
                                                 formatCount(
                                                     commentCounts[package.id] ??
                                                         0),
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 14,
-                                                  color: Colors.grey,
+                                                  color: appTheme
+                                                      .secondaryTextColor,
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),

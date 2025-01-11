@@ -465,6 +465,7 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
               style: TextStyle(color: appTheme.textColor),
+              
             ),
           ),
           actions: [

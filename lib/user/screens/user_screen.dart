@@ -11,7 +11,6 @@ import 'chat_&_group/chatScreen/chat_utils.dart';
 import 'chat_&_group/chat_and_grroup_nav_screen.dart';
 import 'homeScreen/home_screen.dart';
 import 'packageAndTripassists/packages_and_assist.dart';
-import 'profileScreen/settingScreen/settings_screen.dart';
 import 'userManageScreens/temporarly_removed_screen.dart';
 import 'userSearchScreen/user_search_screen.dart';
 import 'profileScreen/profile_screen.dart';
@@ -28,8 +27,6 @@ class UserScreenState extends State<UserScreen> {
   late int _selectedIndex;
   final List<Widget> _pages = [
     const PackageAndTripAssistScreen(),
-    //SettingsPage(), SettingsPage(), SettingsPage(), SettingsPage(),
-
     const SearchPage(),
     const HomePage(),
     const ChatAndGroup(),

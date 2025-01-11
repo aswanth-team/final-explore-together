@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../utils/app_theme.dart';
 import '../../../../utils/dialogues.dart';
 import '../../../../utils/counder.dart';
 import '../../../../utils/image_swipe.dart';
@@ -153,9 +155,19 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('Package Details..'),
+        backgroundColor: appTheme.secondaryColor,
+        title: Text(
+          'Package Details..',
+          style: TextStyle(color: appTheme.textColor),
+        ),
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
@@ -183,17 +195,19 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.comment_outlined,
-                      color: Colors.grey,
+                      color: appTheme.secondaryTextColor,
                       size: 30,
                     ),
                     onPressed: () => _showCommentSheet(context),
                   ),
                   Text(
                     formatCount(widget.commentCount),
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: appTheme.secondaryTextColor),
                   ),
                 ],
               ),
@@ -209,10 +223,10 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
                         children: [
                           Text(
                             locationName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
-                            ),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 24,
+                                color: appTheme.textColor),
                           ),
                           const SizedBox(height: 16),
                           _hasPosted
@@ -261,9 +275,11 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
                                   ),
                                 ),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'Places to Visit:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: appTheme.textColor),
                           ),
                           const SizedBox(height: 10),
                         ],
@@ -296,7 +312,7 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
+                                  color: appTheme.secondaryColor,
                                   border: Border.all(color: Colors.grey),
                                   borderRadius: BorderRadius.circular(30.0),
                                 ),
@@ -305,10 +321,10 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
                                     placeName.length > 15
                                         ? '${placeName.substring(0, 12)}...'
                                         : placeName,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: appTheme.textColor),
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
@@ -326,18 +342,18 @@ class PackageDetailsScreenState extends State<PackageDetailsScreen> {
                         children: [
                           Text(
                             'Prize: ₹$prize',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: appTheme.textColor),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             '$description',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: appTheme.textColor),
                             maxLines: null,
                             overflow: TextOverflow.visible,
                             textAlign: TextAlign.center,
