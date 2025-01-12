@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../../utils/app_theme.dart';
 import '../feedback_popup.dart';
 import 'faq.dart';
 
@@ -39,25 +41,53 @@ class SupportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Support')),
+      backgroundColor: appTheme.primaryColor,
+      appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
+        title: Text(
+          'Support',
+          style: TextStyle(color: appTheme.textColor),
+        ),
+      ),
       body: ListView(
         children: [
           ListTile(
-            leading: const Icon(Icons.email),
-            title: const Text('Contact Us'),
-            subtitle: const Text('Email support or chat with us directly.'),
-            trailing: const Icon(Icons.chevron_right),
+            leading: Icon(
+              Icons.email,
+              color: appTheme.secondaryTextColor,
+            ),
+            title: Text(
+              'Contact Us',
+              style: TextStyle(color: appTheme.textColor),
+            ),
+            subtitle: Text('Email support or chat with us directly.',
+                style: TextStyle(color: appTheme.secondaryTextColor)),
+            trailing: Icon(
+              Icons.chevron_right,
+              color: appTheme.secondaryTextColor,
+            ),
             onTap: () async {
               String email = await fetchEmail();
               _launchEmail(email);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.question_answer),
-            title: const Text('FAQs'),
-            subtitle: const Text('Find answers to common questions.'),
-            trailing: const Icon(Icons.chevron_right),
+            leading: Icon(
+              Icons.question_answer,
+              color: appTheme.secondaryTextColor,
+            ),
+            title: Text('FAQs', style: TextStyle(color: appTheme.textColor)),
+            subtitle: Text('Find answers to common questions.',
+                style: TextStyle(color: appTheme.secondaryTextColor)),
+            trailing: Icon(
+              Icons.chevron_right,
+              color: appTheme.secondaryTextColor,
+            ),
             onTap: () {
               Navigator.push(
                 context,
@@ -66,10 +96,18 @@ class SupportPage extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.feedback),
-            title: const Text('Feedback'),
-            subtitle: const Text('Share suggestions or feature requests.'),
-            trailing: const Icon(Icons.chevron_right), // Added trailing icon
+            leading: Icon(
+              Icons.feedback,
+              color: appTheme.secondaryTextColor,
+            ),
+            title:
+                Text('Feedback', style: TextStyle(color: appTheme.textColor)),
+            subtitle: Text('Share suggestions or feature requests.',
+                style: TextStyle(color: appTheme.secondaryTextColor)),
+            trailing: Icon(
+              Icons.chevron_right,
+              color: appTheme.secondaryTextColor,
+            ),
             onTap: () {
               showDialog(
                 context: context,

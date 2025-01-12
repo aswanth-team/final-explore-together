@@ -34,8 +34,7 @@ class HomePageState extends State<HomePage> {
 
   String _searchQuery = "";
   List<String> suggestions = [];
-  bool isSearchTriggered = false;
-  bool isLoading = false;
+  bool isSearchTriggered = false, isLoading = false, isFilterActive = false;
   List<DocumentSnapshot> posts = [];
   Map<String, Map<String, dynamic>> users = {};
   Map<String, bool> likedPosts = {};
@@ -43,6 +42,8 @@ class HomePageState extends State<HomePage> {
   Map<String, int> likeCounts = {};
   OverlayEntry? _overlayEntry;
   final LayerLink _layerLink = LayerLink();
+  String selectedGender = 'All';
+  String selectedCompletion = 'All';
 
   Future<void> _fetchCommentCounts(String postId) async {
     try {
@@ -309,7 +310,7 @@ class HomePageState extends State<HomePage> {
       for (var post in newPosts) {
         final likes = List<String>.from(post['likes'] ?? []);
         likedPosts[post.id] = likes.contains(currentUserId);
-        likeCounts[post.id] = likes.length;
+        likeCounts[post.id] = likes.length; 
       }
 
       for (var post in newPosts) {
@@ -392,6 +393,210 @@ class HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  void _showFilterPopup(BuildContext context, ThemeManager themeManager) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: themeManager.currentTheme.secondaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Filters',
+                    style: TextStyle(
+                      color: themeManager.currentTheme.textColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: themeManager.currentTheme.textColor,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Gender',
+                    style: TextStyle(
+                      color: themeManager.currentTheme.textColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: themeManager.currentTheme.textColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButton<String>(
+                      value: selectedGender,
+                      isExpanded: true,
+                      dropdownColor: themeManager.currentTheme.secondaryColor,
+                      style:
+                          TextStyle(color: themeManager.currentTheme.textColor),
+                      underline: Container(),
+                      items: ['All', 'Male', 'Female', 'Other']
+                          .map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedGender = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Trip Status',
+                    style: TextStyle(
+                      color: themeManager.currentTheme.textColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: themeManager.currentTheme.textColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButton<String>(
+                      value: selectedCompletion,
+                      isExpanded: true,
+                      dropdownColor: themeManager.currentTheme.secondaryColor,
+                      style:
+                          TextStyle(color: themeManager.currentTheme.textColor),
+                      underline: Container(),
+                      items: ['All', 'Completed', 'Incompleted']
+                          .map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedCompletion = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedGender = 'All';
+                      selectedCompletion = 'All';
+                    });
+                    Navigator.of(context).pop();
+                    _resetFilter();
+                  },
+                  child: Text(
+                    'Reset',
+                    style: TextStyle(
+                        color: isFilterActive
+                            ? Colors.red
+                            : themeManager.currentTheme.textColor),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _applyFilter();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Apply',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _applyFilter() async {
+    setState(() {
+      isLoading = true;
+      posts.clear();
+    });
+
+    try {
+      Query query = FirebaseFirestore.instance
+          .collection('post')
+          .where('userid', isNotEqualTo: currentUserId);
+
+      final querySnapshot = await query.get();
+      final filteredDocs = querySnapshot.docs.where((doc) {
+        final post = doc.data() as Map<String, dynamic>;
+        final userId = post['userid'];
+        final user = users[userId];
+
+        if (user == null) return false;
+
+        bool matchesGender =
+            selectedGender == 'All' || user['gender'] == selectedGender;
+
+        bool matchesCompletion = selectedCompletion == 'All' ||
+            (selectedCompletion == 'Completed' &&
+                post['tripCompleted'] == true) ||
+            (selectedCompletion == 'Incompleted' &&
+                post['tripCompleted'] == false);
+
+        return matchesGender && matchesCompletion;
+      }).toList();
+
+      setState(() {
+        posts = filteredDocs;
+        isFilterActive = selectedGender != 'All' || selectedCompletion != 'All';
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error applying filter: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _resetFilter() {
+    setState(() {
+      selectedGender = 'All';
+      selectedCompletion = 'All';
+      isFilterActive = false;
+    });
+    _fetchPosts();
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeManager = Provider.of<ThemeManager>(context);
@@ -465,7 +670,6 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
               style: TextStyle(color: appTheme.textColor),
-              
             ),
           ),
           actions: [
@@ -527,6 +731,14 @@ class HomePageState extends State<HomePage> {
                   ],
                 );
               },
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.filter_list,
+                color: isFilterActive ? Colors.blue : Colors.grey,
+                size: 28,
+              ),
+              onPressed: () => _showFilterPopup(context, themeManager),
             ),
           ],
         ),

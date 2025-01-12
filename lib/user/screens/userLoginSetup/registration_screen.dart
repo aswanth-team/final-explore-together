@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pinput/pinput.dart';
 //import 'dart:math';
+import '../../../services/otp.dart';
 import '../../../services/user/firebase_user_auth.dart';
 import '../../../login_screen.dart';
 import 'get_started_screen.dart';
@@ -25,6 +26,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final OTPService otpService = OTPService();
   String? _gender;
   int _step = 1;
   String otp = "";
@@ -152,13 +154,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   Future<void> _sendOtp(String mobileNumber) async {
-    setState(() {
-      generatedOtp = _generateOtp(); // Generate OTP
-    });
+    if (mounted) {
+      setState(() {
+        generatedOtp = _generateOtp();
+      });
+    }
     print("OTP Sent to $mobileNumber: $generatedOtp");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("OTP sent to your mobile number.")),
-    );
+    String result = await otpService.sendOTP(mobileNumber, generatedOtp);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result)),
+      );
+    }
     startTimer();
   }
 
@@ -575,6 +582,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               if (value == null || value.isEmpty) {
                 return "Please enter your password";
               }
+              if (value.length < 6) {
+                return "Password cannot exceed 6 characters";
+              }
               return null;
             },
           ),
@@ -593,6 +603,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             }),
             obscureText: !isConfirmPasswordVisible,
             validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Please confirm your password";
+              }
+              if (value.length < 6) {
+                return "Password cannot exceed 6 characters";
+              }
               if (value != passwordController.text) {
                 return "Passwords do not match";
               }
@@ -788,8 +804,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         const SizedBox(height: 20),
         ElevatedButton(
           onPressed: _start == 0
-              ? () {
+              ? () async {
                   startTimer();
+                  await _sendOtp(mobileNumberController.text);
                   setState(() {});
                 }
               : null,
