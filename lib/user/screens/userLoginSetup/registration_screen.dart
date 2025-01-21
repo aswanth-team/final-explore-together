@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:pinput/pinput.dart';
-//import 'dart:math';
+import '../../../services/one_signal.dart';
 import '../../../services/otp.dart';
 import '../../../services/user/firebase_user_auth.dart';
 import '../../../login_screen.dart';
@@ -118,9 +120,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       },
     );
     if (selectedDate != null) {
-      setState(() {
-        dobController.text = "${selectedDate.toLocal()}".split(' ')[0];
-      });
+      if (mounted) {
+        setState(() {
+          dobController.text = "${selectedDate.toLocal()}".split(' ')[0];
+        });
+      }
     }
   }
 
@@ -128,29 +132,34 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _start = 60;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_start == 0) {
-        setState(() {
-          _timer?.cancel();
-        });
+        if (mounted) {
+          setState(() {
+            _timer?.cancel();
+          });
+        }
       } else {
-        setState(() {
-          _start--;
-        });
+        if (mounted) {
+          setState(() {
+            _start--;
+          });
+        }
       }
     });
   }
 
   void _nextStep() {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _step++;
-      });
+      if (mounted) {
+        setState(() {
+          _step++;
+        });
+      }
     }
   }
 
   String _generateOtp() {
-    //final random = Random();
-    //return (random.nextInt(900000) + 100000).toString();
-    return '777777';
+    final random = Random();
+    return (random.nextInt(900000) + 100000).toString();
   }
 
   Future<void> _sendOtp(String mobileNumber) async {
@@ -158,6 +167,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       setState(() {
         generatedOtp = _generateOtp();
       });
+    }
+    final playerId = OneSignal.User.pushSubscription.id;
+    if (playerId != null) {
+      await NotificationService().sendOtpNotificationToUser(
+          otp: generatedOtp, title: 'Your OTP Code', playerId: playerId);
+      print("Notification Sent to $playerId: $generatedOtp");
+    } else {
+      print('Player ID is null');
     }
     print("OTP Sent to $mobileNumber: $generatedOtp");
     String result = await otpService.sendOTP(mobileNumber, generatedOtp);
@@ -220,35 +237,43 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   void initState() {
     super.initState();
     usernameController.addListener(() {
-      setState(() {
-        if (usernameController.text.isNotEmpty) {
-          usernameError = null;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (usernameController.text.isNotEmpty) {
+            usernameError = null;
+          }
+        });
+      }
     });
 
     mobileNumberController.addListener(() {
-      setState(() {
-        if (mobileNumberController.text.isNotEmpty) {
-          mobileError = null;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (mobileNumberController.text.isNotEmpty) {
+            mobileError = null;
+          }
+        });
+      }
     });
 
     emailController.addListener(() {
-      setState(() {
-        if (emailController.text.isNotEmpty) {
-          emailError = null;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (emailController.text.isNotEmpty) {
+            emailError = null;
+          }
+        });
+      }
     });
 
     aadharController.addListener(() {
-      setState(() {
-        if (aadharController.text.isNotEmpty) {
-          aadharError = null;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (aadharController.text.isNotEmpty) {
+            aadharError = null;
+          }
+        });
+      }
     });
   }
 
@@ -326,7 +351,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return Column(
       children: [
         SizedBox(
-          width: 350, // Set the desired width
+          width: 350,
           child: TextFormField(
             controller: fullNameController,
             style: const TextStyle(color: Colors.white),
@@ -573,9 +598,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             style: const TextStyle(color: Colors.white),
             decoration: _inputDecorationWithEye(
                 "New Password", Icons.lock, isPasswordVisible, () {
-              setState(() {
-                isPasswordVisible = !isPasswordVisible;
-              });
+              if (mounted) {
+                setState(() {
+                  isPasswordVisible = !isPasswordVisible;
+                });
+              }
             }),
             obscureText: !isPasswordVisible,
             validator: (value) {
@@ -597,9 +624,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             style: const TextStyle(color: Colors.white),
             decoration: _inputDecorationWithEye(
                 "Confirm Password", Icons.lock, isConfirmPasswordVisible, () {
-              setState(() {
-                isConfirmPasswordVisible = !isConfirmPasswordVisible;
-              });
+              if (mounted) {
+                setState(() {
+                  isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                });
+              }
             }),
             obscureText: !isConfirmPasswordVisible,
             validator: (value) {
@@ -622,9 +651,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           children: [
             ElevatedButton(
               onPressed: () {
-                setState(() {
-                  _step = 1;
-                });
+                if (mounted) {
+                  setState(() {
+                    _step = 1;
+                  });
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent,
@@ -647,12 +678,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ? null
                   : () async {
                       if (_formKey.currentState!.validate()) {
-                        setState(() {
-                          _isLoading = true;
-                          usernameError = null;
-                          mobileError = null;
-                          emailError = null;
-                        });
+                        if (mounted) {
+                          setState(() {
+                            _isLoading = true;
+                            usernameError = null;
+                            mobileError = null;
+                            emailError = null;
+                          });
+                        }
                         List<String> conflicts =
                             await UserAuthServices().checkIfUserExists(
                           username: usernameController.text,
@@ -662,30 +695,35 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         );
 
                         if (conflicts.isNotEmpty) {
-                          setState(() {
-                            if (conflicts.contains("Username")) {
-                              usernameError = "This username is already taken";
-                            }
-                            if (conflicts.contains("Email")) {
-                              emailError = "This email is already registered";
-                            }
-                            if (conflicts.contains("Mobile number")) {
-                              mobileError =
-                                  "This mobile number is already registered";
-                            }
-                            if (conflicts.contains("Aadhar number")) {
-                              aadharError =
-                                  "Aadhar number is already registered";
-                            }
-                            _isLoading = false;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              if (conflicts.contains("Username")) {
+                                usernameError =
+                                    "This username is already taken";
+                              }
+                              if (conflicts.contains("Email")) {
+                                emailError = "This email is already registered";
+                              }
+                              if (conflicts.contains("Mobile number")) {
+                                mobileError =
+                                    "This mobile number is already registered";
+                              }
+                              if (conflicts.contains("Aadhar number")) {
+                                aadharError =
+                                    "Aadhar number is already registered";
+                              }
+                              _isLoading = false;
+                            });
+                          }
                           return;
                         }
                         await _sendOtp(mobileNumberController.text);
-                        setState(() {
-                          _isLoading = false;
-                          _step = 3;
-                        });
+                        if (mounted) {
+                          setState(() {
+                            _isLoading = false;
+                            _step = 3;
+                          });
+                        }
                       }
                     },
               style: ElevatedButton.styleFrom(
@@ -726,9 +764,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               color: Colors.white,
             ),
             onPressed: () {
-              setState(() {
-                _step = 2;
-              });
+              if (mounted) {
+                setState(() {
+                  _step = 2;
+                });
+              }
             },
           ),
         ),
@@ -739,9 +779,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             otp = value;
           },
           onCompleted: (value) {
-            setState(() {
-              otp = value;
-            });
+            if (mounted) {
+              setState(() {
+                otp = value;
+              });
+            }
           },
           defaultPinTheme: PinTheme(
             height: 56,
@@ -764,25 +806,31 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ? null
               : () async {
                   if (otp == generatedOtp) {
-                    setState(() {
-                      _isVerifyLoading = true;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _isVerifyLoading = true;
+                      });
+                    }
 
                     try {
                       await _storeUserDetails();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const GetStartedPage()),
-                      );
+                      if (mounted) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const GetStartedPage()),
+                        );
+                      }
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("An error occurred: $e")),
                       );
                     } finally {
-                      setState(() {
-                        _isVerifyLoading = false;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          _isVerifyLoading = false;
+                        });
+                      }
                     }
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -807,7 +855,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ? () async {
                   startTimer();
                   await _sendOtp(mobileNumberController.text);
-                  setState(() {});
+                  if (mounted) {
+                    setState(() {});
+                  }
                 }
               : null,
           style: ElevatedButton.styleFrom(

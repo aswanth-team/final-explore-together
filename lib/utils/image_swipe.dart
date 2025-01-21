@@ -15,7 +15,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
   late PageController _pageController;
   late Timer _timer;
   int _currentPage = 0;
-  bool _isPaused = false; // To track the pause state
+  bool _isPaused = false;
 
   @override
   void initState() {
@@ -61,6 +61,28 @@ class _ImageCarouselState extends State<ImageCarousel> {
     });
   }
 
+  void _showImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: InteractiveViewer(
+            panEnabled: true,
+            boundaryMargin: const EdgeInsets.all(20),
+            minScale: 0.8,
+            maxScale: 5.0,
+            child: CachedNetworkImage(
+              imageUrl: imageUrl,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDots() {
     return Positioned(
       bottom: 10.0,
@@ -97,16 +119,18 @@ class _ImageCarouselState extends State<ImageCarousel> {
             borderRadius: BorderRadius.circular(15.0),
             child: GestureDetector(
               onLongPress: _pauseAutoSwipe,
-              onLongPressUp:
-                  _resumeAutoSwipe, // Resume swipe when the long press is released
+              onLongPressUp: _resumeAutoSwipe,
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: widget.locationImages.length,
                 itemBuilder: (context, index) {
-                  return Image(
-                    image: CachedNetworkImageProvider(
-                        widget.locationImages[index]),
-                    fit: BoxFit.cover,
+                  return GestureDetector(
+                    onTap: () => _showImageDialog(widget.locationImages[index]),
+                    child: Image(
+                      image: CachedNetworkImageProvider(
+                          widget.locationImages[index]),
+                      fit: BoxFit.cover,
+                    ),
                   );
                 },
                 onPageChanged: (index) {
@@ -118,7 +142,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
             ),
           ),
         ),
-        _buildDots(),
+        if (widget.locationImages.length > 1) _buildDots(),
       ],
     );
   }

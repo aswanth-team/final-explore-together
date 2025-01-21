@@ -34,7 +34,10 @@ class HomePageState extends State<HomePage> {
 
   String _searchQuery = "";
   List<String> suggestions = [];
-  bool isSearchTriggered = false, isLoading = false, isFilterActive = false;
+  bool isSearchTriggered = false,
+      isLoading = false,
+      isFilterActive = false,
+      _isSearching = false;
   List<DocumentSnapshot> posts = [];
   Map<String, Map<String, dynamic>> users = {};
   Map<String, bool> likedPosts = {};
@@ -310,7 +313,7 @@ class HomePageState extends State<HomePage> {
       for (var post in newPosts) {
         final likes = List<String>.from(post['likes'] ?? []);
         likedPosts[post.id] = likes.contains(currentUserId);
-        likeCounts[post.id] = likes.length; 
+        likeCounts[post.id] = likes.length;
       }
 
       for (var post in newPosts) {
@@ -610,132 +613,148 @@ class HomePageState extends State<HomePage> {
           toolbarHeight: kToolbarHeight + 10.0,
           title: CompositedTransformTarget(
             link: _layerLink,
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                  isSearchTriggered = false;
-                  if (value.isNotEmpty) {
-                    _showSuggestions();
-                  } else {
-                    _removeOverlay();
-                  }
-                });
-              },
-              onSubmitted: (value) {
-                setState(() {
-                  _searchQuery = value;
-                  isSearchTriggered = true;
-                });
-                _removeOverlay();
-                _searchPosts();
-              },
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: appTheme.primaryColor,
-                hintText: 'Search...',
-                hintStyle:
-                    TextStyle(color: appTheme.secondaryTextColor, fontSize: 16),
-                prefixIcon:
-                    Icon(Icons.search, color: appTheme.secondaryTextColor),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.clear,
-                            color: appTheme.secondaryTextColor),
-                        onPressed: () {
-                          setState(() {
-                            _removeOverlay();
-                            _searchController.clear();
-                            _searchQuery = "";
-                            isSearchTriggered = false;
-                            _fetchPosts();
-                          });
-                        },
-                      )
-                    : null,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
-                ),
-              ),
-              style: TextStyle(color: appTheme.textColor),
-            ),
+            child: _isSearching
+                ? TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                        isSearchTriggered = false;
+                        if (value.isNotEmpty) {
+                          _showSuggestions();
+                        } else {
+                          _removeOverlay();
+                        }
+                      });
+                    },
+                    onSubmitted: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                        isSearchTriggered = true;
+                      });
+                      _removeOverlay();
+                      _searchPosts();
+                    },
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: appTheme.primaryColor,
+                      hintText: 'Search...',
+                      hintStyle: TextStyle(
+                          color: appTheme.secondaryTextColor, fontSize: 16),
+                      prefixIcon: Icon(Icons.search,
+                          color: appTheme.secondaryTextColor),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear,
+                                  color: appTheme.secondaryTextColor),
+                              onPressed: () {
+                                setState(() {
+                                  _removeOverlay();
+                                  _isSearching = false;
+                                  _searchController.clear();
+                                  _searchQuery = "";
+                                  isSearchTriggered = false;
+                                  _fetchPosts();
+                                });
+                              },
+                            )
+                          : null,
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 6, horizontal: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide:
+                            BorderSide(color: appTheme.textColor, width: 0.5),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide:
+                            BorderSide(color: appTheme.textColor, width: 0.5),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide:
+                            BorderSide(color: appTheme.textColor, width: 0.5),
+                      ),
+                    ),
+                    style: TextStyle(color: appTheme.textColor),
+                  )
+                : Text(""),
           ),
           actions: [
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('user')
-                  .doc(currentUserId)
-                  .collection('notifications')
-                  .where('isSeen', isEqualTo: false)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                int unseenCount = 0;
-                if (snapshot.hasData) {
-                  unseenCount = snapshot.data!.docs.length;
-                }
+            if (!_isSearching)
+              IconButton(
+                icon: Icon(Icons.search, color: appTheme.textColor),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = true;
+                  });
+                },
+              ),
+            if (!_isSearching)
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('user')
+                    .doc(currentUserId)
+                    .collection('notifications')
+                    .where('isSeen', isEqualTo: false)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  int unseenCount = 0;
+                  if (snapshot.hasData) {
+                    unseenCount = snapshot.data!.docs.length;
+                  }
 
-                return Stack(
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.notifications,
-                        size: 30.0,
-                        color: Colors.amber,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const NotificationsPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    if (unseenCount > 0)
-                      Positioned(
-                        right: 14,
-                        top: 13,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 10,
-                            minHeight: 10,
-                          ),
-                          child: Text(
-                            '$unseenCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 5,
-                              fontWeight: FontWeight.bold,
+                  return Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.notifications,
+                          size: 30.0,
+                          color: Colors.amber,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const NotificationsPage(),
                             ),
-                            textAlign: TextAlign.center,
+                          );
+                        },
+                      ),
+                      if (unseenCount > 0)
+                        Positioned(
+                          right: 14,
+                          top: 13,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 10,
+                              minHeight: 10,
+                            ),
+                            child: Text(
+                              '$unseenCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
-                );
-              },
-            ),
+                    ],
+                  );
+                },
+              ),
             IconButton(
               icon: Icon(
-                Icons.filter_list,
-                color: isFilterActive ? Colors.blue : Colors.grey,
+                Icons.filter_alt_outlined,
+                color: isFilterActive ? Colors.blue : appTheme.textColor,
                 size: 28,
               ),
               onPressed: () => _showFilterPopup(context, themeManager),

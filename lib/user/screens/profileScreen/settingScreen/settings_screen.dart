@@ -247,6 +247,7 @@ class SettingsPage extends StatelessWidget {
                 try {
                   final userId = FirebaseAuth.instance.currentUser?.uid;
                   if (userId != null) {
+                    
                     // Clear OneSignal player ID
                     final playerId = OneSignal.User.pushSubscription.id;
                     final userDocRef = FirebaseFirestore.instance

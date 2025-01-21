@@ -36,11 +36,9 @@ class UserStatusManager {
 }
 
 class PreferencesManager {
-  // Limit the number of saved chats
   static Future<void> saveChats(List<Map<String, dynamic>> chats) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Limit to most recent 100 chats
       final limitedChats = chats.take(100).toList();
       final chatJsonList =
           limitedChats.map((chat) => json.encode(chat)).toList();
@@ -53,13 +51,12 @@ class PreferencesManager {
   static Future<void> clearPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.clear(); // Clears all saved preferences
+      await prefs.clear();
     } catch (e) {
       print('Error clearing preferences: $e');
     }
   }
 
-  // Add an option to load a subset of chats
   static Future<List<Map<String, dynamic>>> loadChats({int limit = 50}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -82,12 +79,11 @@ class OptimizedNetworkImage extends StatelessWidget {
   final BoxFit? fit;
 
   const OptimizedNetworkImage(
-      {Key? key,
+      {super.key,
       required this.imageUrl,
       this.width,
       this.height,
-      this.fit = BoxFit.cover})
-      : super(key: key);
+      this.fit = BoxFit.cover});
 
   @override
   Widget build(BuildContext context) {
@@ -98,14 +94,13 @@ class OptimizedNetworkImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      memCacheWidth: 250, // Limit memory cache width
-      maxWidthDiskCache: 500, // Limit disk cache width
+      memCacheWidth: 250,
+      maxWidthDiskCache: 500,
     );
   }
 
   static Future<void> clearImageCache() async {
     try {
-      // Clears the image cache for both live and stored images
       PaintingBinding.instance.imageCache.clear();
       PaintingBinding.instance.imageCache.clearLiveImages();
       print('All cached images cleared.');

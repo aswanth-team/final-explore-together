@@ -24,10 +24,8 @@ class NotificationService {
       for (var doc in querySnapshot.docs) {
         var data = doc.data();
         if (data['onId'] != null && data['onId'] is List) {
-          // If 'onId' is a list, we add all playerIds from the list
           playerIds.addAll(List<String>.from(data['onId']));
         } else if (data['onId'] != null && data['onId'] is String) {
-          // If 'onId' is a single string, we add that playerId
           playerIds.add(data['onId']);
         }
       }
@@ -39,8 +37,6 @@ class NotificationService {
           "headings": {"en": title},
           "include_player_ids": playerIds,
         };
-
-        // Add the image if available
         if (imageUrl != null) {
           notificationPayload["big_picture"] = imageUrl;
           notificationPayload["ios_attachments"] = {"image": imageUrl};
@@ -82,7 +78,7 @@ class NotificationService {
         },
         body: jsonEncode({
           'app_id': OneSignalApiKeys.appId,
-          'include_player_ids': onIds, // Single playerId notification
+          'include_player_ids': onIds,
           'headings': {'en': title},
           'contents': {'en': description},
         }),
@@ -97,8 +93,38 @@ class NotificationService {
       print("Error sending notification: $e");
     }
   }
-}
 
+  Future<void> sendOtpNotificationToUser({
+    required String title,
+    required String otp,
+    required String playerId,
+  }) async {
+    try {
+      final url = Uri.parse('https://onesignal.com/api/v1/notifications');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Basic ${OneSignalApiKeys.oneSignalId}',
+        },
+        body: jsonEncode({
+          'app_id': OneSignalApiKeys.appId,
+          'include_player_ids': [playerId],
+          'headings': {'en': title},
+          'contents': {'en': 'Your OTP is $otp'},
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        print("OTP notification sent successfully.");
+      } else {
+        print("Failed to send OTP notification: ${response.body}");
+      }
+    } on Exception catch (e) {
+      print("Error sending OTP notification: $e");
+    }
+  }
+}
 
 /* Future<void> sentNotification(String title, String description) async {
     try {

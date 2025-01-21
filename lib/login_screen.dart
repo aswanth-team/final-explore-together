@@ -84,11 +84,6 @@ class _LoginScreenState extends State<LoginScreen> {
         for (final field in ['username', 'email', 'phoneno', 'aadharno']) {
           Object queryIdentifier = identifier;
 
-          if (field == 'phoneno' || field == 'aadharno') {
-            queryIdentifier =
-                int.tryParse(identifier) ?? identifier; 
-          }
-
           final userQuery = await FirebaseFirestore.instance
               .collection('user')
               .where(field, isEqualTo: queryIdentifier)

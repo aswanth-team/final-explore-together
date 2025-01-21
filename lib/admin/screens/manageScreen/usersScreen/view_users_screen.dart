@@ -128,15 +128,18 @@ class UserSearchPageState extends State<UserSearchPage> {
                       const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Colors.blue, width: 2),
+                    borderSide:
+                        BorderSide(color: appTheme.textColor, width: 0.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Colors.blue, width: 2),
+                    borderSide:
+                        BorderSide(color: appTheme.textColor, width: 0.5),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Colors.grey, width: 1),
+                    borderSide:
+                        BorderSide(color: appTheme.textColor, width: 0.5),
                   ),
                   suffixIcon: query.isNotEmpty
                       ? IconButton(

@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer';
 import '../../../utils/app_theme.dart';
 import '../../../utils/loading.dart';
@@ -16,25 +18,86 @@ class AiChatPage extends StatefulWidget {
 
 class AiChatPageState extends State<AiChatPage> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, String>> _chatHistory = [];
-  bool _isLoading = false;
-  Map<String, dynamic>? _currentUserDetails;
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  int? userAge;
-  String? userName;
-  String? fullName;
-  String? userDOB;
-  String? userLocation;
-  String? userEmail;
-  String? userBio;
-  String? instruction;
+  final String _chatStorageKey = 'ai_chat_history';
   final List<String> _userInputHistory = [];
+  late SharedPreferences _prefs;
+  List<Map<String, String>> _chatHistory = [];
   List<Map<String, dynamic>>? usersPosts;
+  Map<String, dynamic>? _currentUserDetails;
+  int? userAge;
+  String? userName,
+      fullName,
+      userDOB,
+      userLocation,
+      userEmail,
+      userBio,
+      instruction;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeStorage();
     _fetchUserData();
+  }
+
+  Future<void> _initializeStorage() async {
+    _prefs = await SharedPreferences.getInstance();
+    _loadChatHistory();
+  }
+
+  Future<void> _loadChatHistory() async {
+    try {
+      final String? chatHistoryJson = _prefs.getString(_chatStorageKey);
+      if (chatHistoryJson != null) {
+        final List<dynamic> decodedList = json.decode(chatHistoryJson);
+        if (mounted) {
+          setState(() {
+            _chatHistory = decodedList
+                .map((item) => Map<String, String>.from(item))
+                .toList();
+          });
+        }
+      }
+    } catch (e) {
+      log('Error loading chat history: $e');
+    }
+  }
+
+  Future<void> _saveChatHistory() async {
+    try {
+      final String chatHistoryJson = json.encode(_chatHistory);
+      await _prefs.setString(_chatStorageKey, chatHistoryJson);
+    } catch (e) {
+      log('Error saving chat history: $e');
+    }
+  }
+
+  void _addMessageToHistory(Map<String, String> message) {
+    if (message['role'] != 'error') {
+      if (mounted) {
+        setState(() {
+          _chatHistory.add(message);
+        });
+      }
+      _saveChatHistory();
+    } else {
+      if (mounted) {
+        setState(() {
+          _chatHistory.add(message);
+        });
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted) {
+            setState(() {
+              _chatHistory.removeWhere((msg) =>
+                  msg['role'] == 'error' &&
+                  msg['message'] == message['message']);
+            });
+          }
+        });
+      }
+    }
   }
 
   void _systemPromptMaker() {
@@ -85,6 +148,68 @@ class AiChatPageState extends State<AiChatPage> {
     }
     _fetchPostData();
     _systemPromptMaker();
+  }
+
+  Future<void> clearChatHistory() async {
+    try {
+      await _prefs.remove(_chatStorageKey);
+      if (mounted) {
+        setState(() {
+          _chatHistory = [];
+        });
+      }
+    } catch (e) {
+      log('Error clearing chat history: $e');
+    }
+  }
+
+  Future<void> _showClearChatDialog() async {
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+    final appTheme = themeManager.currentTheme;
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: appTheme.primaryColor,
+          title: Text(
+            'Clear Chat History',
+            style: TextStyle(color: appTheme.textColor),
+          ),
+          content: Text(
+            'Are you sure you want to clear all chat history? This action cannot be undone.',
+            style: TextStyle(color: appTheme.textColor),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: appTheme.textColor),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text(
+                'Clear',
+                style: TextStyle(color: Colors.red),
+              ),
+              onPressed: () {
+                clearChatHistory();
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Chat history cleared'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _fetchPostData() async {
@@ -169,10 +294,13 @@ class AiChatPageState extends State<AiChatPage> {
       _userInputHistory.removeAt(0);
     }
 
-    setState(() {
-      _chatHistory.add({'role': 'user', 'message': userMessage});
-      _isLoading = true;
-    });
+    _addMessageToHistory({'role': 'user', 'message': userMessage});
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     _systemPromptMaker();
 
@@ -197,7 +325,7 @@ class AiChatPageState extends State<AiChatPage> {
       final response = await gemini.chat(conversation);
       if (mounted) {
         setState(() {
-          _chatHistory.add({
+          _addMessageToHistory({
             'role': 'model',
             'message': response?.output ?? 'No response received',
           });
@@ -207,7 +335,7 @@ class AiChatPageState extends State<AiChatPage> {
       log('Error in chat: $e');
       if (mounted) {
         setState(() {
-          _chatHistory.add({
+          _addMessageToHistory({
             'role': 'error',
             'message':
                 'Response not loading. Please try again or check your internet connection.',
@@ -225,6 +353,8 @@ class AiChatPageState extends State<AiChatPage> {
 
   Widget _buildMessageBubble(String message, String role,
       {bool isLoading = false}) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     bool isUser = role == 'user';
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -232,7 +362,7 @@ class AiChatPageState extends State<AiChatPage> {
         margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
         padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 18.0),
         decoration: BoxDecoration(
-          color: isUser ? Colors.blue : Colors.grey.shade300,
+          color: isUser ? Colors.blue : appTheme.secondaryColor,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20.0),
             topRight: const Radius.circular(20.0),
@@ -253,7 +383,7 @@ class AiChatPageState extends State<AiChatPage> {
                 message,
                 style: TextStyle(
                   fontSize: 16.0,
-                  color: isUser ? Colors.white : Colors.black87,
+                  color: isUser ? Colors.white : appTheme.textColor,
                   fontWeight: FontWeight.w400,
                   height: 1.4,
                 ),
@@ -306,6 +436,14 @@ class AiChatPageState extends State<AiChatPage> {
             ],
           ),
         ),
+        actions: [
+          if (_chatHistory.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _showClearChatDialog,
+              tooltip: 'Clear chat history',
+            ),
+        ],
       ),
       body: SafeArea(
         child: Column(

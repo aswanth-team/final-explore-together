@@ -34,6 +34,7 @@ class SearchPageState extends State<SearchPage> {
               .where((user) =>
                   user['isRemoved'] == false && user['userId'] != currentUserId)
               .toList();
+          users.shuffle();
 
           isLoading = false;
         });
@@ -154,7 +155,7 @@ class SearchPageState extends State<SearchPage> {
                               child: Container(
                                 color: appTheme.primaryColor,
                                 padding: const EdgeInsets.symmetric(
-                                    vertical: 10, horizontal: 0),
+                                    vertical: 1, horizontal: 0),
                                 child: Row(
                                   children: [
                                     Padding(

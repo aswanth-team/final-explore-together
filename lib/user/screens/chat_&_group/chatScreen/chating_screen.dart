@@ -36,12 +36,10 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   bool isUserOnline = false;
   bool isOffline = false;
   Map<String, dynamic>? userDetails;
-
-  // Pagination variables
   static const int _messagesPerPage = 20;
   DocumentSnapshot? _lastDocument;
   bool _hasMoreMessages = true;
-
+  
   @override
   void initState() {
     super.initState();
@@ -128,7 +126,6 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   Future<void> _initializeChat() async {
     try {
-      // Load cached messages first
       final cachedMessages = await _loadMessagesFromCache();
       if (cachedMessages.isNotEmpty) {
         _messagesController.add(cachedMessages);

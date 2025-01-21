@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import '../../../login_screen.dart';
+
+import '../user_screen.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -187,7 +188,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const LoginScreen()),
+                                builder: (context) => const UserScreen()),
                           );
                         }
                       : _nextPage,

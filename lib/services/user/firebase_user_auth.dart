@@ -26,18 +26,16 @@ class UserAuthServices {
         email: email,
         password: password,
       );
-
-      int aadharInt = int.parse(aadharno);
-      int phonenoInt = int.parse(phoneno);
       String userUid = userCredential.user?.uid ?? '';
+      String cleanedAadhar = aadharno.replaceAll(RegExp(r'\D'), '');
       await firestore.collection('user').doc(userUid).set({
         'username': username,
-        'phoneno': phonenoInt,
+        'phoneno': phoneno,
         'email': email,
         'dob': dob,
         'gender': gender,
         'fullname': fullname,
-        'aadharno': aadharInt,
+        'aadharno': cleanedAadhar,
         'tripimages': null,
         'facebook': null,
         'instagram': null,
@@ -106,21 +104,18 @@ class UserAuthServices {
       if (adminEmailSnapshot.docs.isNotEmpty) {
         conflicts.add("Email");
       }
-
-      int mobileInt = int.parse(mobile);
       final mobileSnapshot = await firestore
           .collection('user')
-          .where('phoneno', isEqualTo: mobileInt)
+          .where('phoneno', isEqualTo: mobile)
           .get();
       if (mobileSnapshot.docs.isNotEmpty) {
         conflicts.add("Mobile number");
       }
 
       String cleanedAadhar = aadharno.replaceAll(RegExp(r'\D'), '');
-      int aadharInt = int.parse(cleanedAadhar);
       final aadharSnapshot = await firestore
           .collection('user')
-          .where('aadharno', isEqualTo: aadharInt)
+          .where('aadharno', isEqualTo: cleanedAadhar)
           .get();
       if (aadharSnapshot.docs.isNotEmpty) {
         conflicts.add("Aadhar number");
@@ -164,22 +159,18 @@ class UserAuthServices {
       if (adminEmailSnapshot.docs.isNotEmpty) {
         return adminEmailSnapshot.docs.first.id;
       }
-
-      int phoneNoInt = int.parse(identifier);
       final QuerySnapshot phoneSnapshot = await firestore
           .collection('user')
-          .where('phoneno', isEqualTo: phoneNoInt)
+          .where('phoneno', isEqualTo: identifier)
           .limit(1)
           .get();
 
       if (phoneSnapshot.docs.isNotEmpty) {
         return phoneSnapshot.docs.first.id;
       }
-
-      int aadharInt = int.parse(identifier);
       final QuerySnapshot aadharSnapshot = await firestore
           .collection('user')
-          .where('aadharno', isEqualTo: aadharInt)
+          .where('aadharno', isEqualTo: identifier)
           .limit(1)
           .get();
 
