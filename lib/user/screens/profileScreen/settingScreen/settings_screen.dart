@@ -247,6 +247,7 @@ class SettingsPage extends StatelessWidget {
                 try {
                   final userId = FirebaseAuth.instance.currentUser?.uid;
                   if (userId != null) {
+                    await UserStatusManager.updateUserStatus(false);
                     // Clear OneSignal player ID
                     final playerId = OneSignal.User.pushSubscription.id;
                     final userDocRef = FirebaseFirestore.instance
@@ -295,9 +296,6 @@ class SettingsPage extends StatelessWidget {
 
                     // Clear all app preferences
                     await PreferencesManager.clearPreferences();
-
-                    //make the user offline
-                    await UserStatusManager.updateUserStatus(false);
                   }
                 } catch (e) {
                   if (context.mounted) {
