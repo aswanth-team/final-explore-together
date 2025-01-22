@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
-//import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:provider/provider.dart';
 import 'admin/screens/admin_screen.dart';
@@ -16,12 +15,10 @@ const apiKey = 'AIzaSyAwjcN3Aei78CJ6YP2Ok-W47i-Z_5k_5EE';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  //WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
 
   final themeManager = ThemeManager();
   await themeManager.loadTheme();
 
-  //FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // Initialize Firebase
   await Firebase.initializeApp(
@@ -60,7 +57,6 @@ Future<void> main() async {
     home = const LoginScreen();
   }
 
-  //FlutterNativeSplash.remove();
   runApp(
     ChangeNotifierProvider(
       create: (_) => themeManager,
