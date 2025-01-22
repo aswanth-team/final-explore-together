@@ -188,13 +188,15 @@ class UserAuthServices {
   Future<String?> getUserEmailById(String userId) async {
     try {
       final userDoc = await firestore.collection('user').doc(userId).get();
+      final adminDoc = await firestore.collection('user').doc(userId).get();
       if (userDoc.exists) {
         return userDoc.data()?['email'] as String?;
+      } else if (adminDoc.exists) {
+        return adminDoc.data()?['email'] as String?;
       } else {
         return null;
       }
     } catch (e) {
-      print('Error fetching user email: $e');
       return null;
     }
   }

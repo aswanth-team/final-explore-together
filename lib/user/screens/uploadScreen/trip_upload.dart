@@ -26,7 +26,7 @@ class _ImageUploaderState extends State<ImageUploader> {
           await ImagePicker().pickImage(source: ImageSource.gallery);
 
       if (pickedFile != null) {
-        if (!mounted) return; // Ensure widget is still in the tree
+        if (!mounted) return;
         setState(() {
           _selectedImage = File(pickedFile.path);
         });
@@ -131,12 +131,19 @@ class _ImageUploaderState extends State<ImageUploader> {
                                 fit: BoxFit.contain,
                                 child: Image.file(_selectedImage!),
                               )
-                            : Center(
-                                child: Text(
-                                  'Tap to select an image',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: appTheme.textColor),
-                                ),
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_photo_alternate,
+                                      size: 40, color: appTheme.textColor),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Add Image',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color: appTheme.secondaryTextColor),
+                                  ),
+                                ],
                               ),
                       ),
                     ),
@@ -149,7 +156,7 @@ class _ImageUploaderState extends State<ImageUploader> {
                       : _uploadImage,
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.green,
+                    backgroundColor: Colors.blue,
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -160,7 +167,10 @@ class _ImageUploaderState extends State<ImageUploader> {
                   ),
                   child: Text(
                     'Upload',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

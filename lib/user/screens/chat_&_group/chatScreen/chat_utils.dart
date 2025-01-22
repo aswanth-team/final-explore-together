@@ -23,14 +23,21 @@ class UserStatusManager {
     }
   }
 
-  static Future<bool> getUserOnlineStatus(String userId) async {
+  static Future<Map<String, dynamic>> getUserStatus(String userId) async {
     try {
       final userDoc =
           await FirebaseFirestore.instance.collection('user').doc(userId).get();
-      return userDoc.data()?['isOnline'] ?? false;
+      final userData = userDoc.data() ?? {};
+      return {
+        'isOnline': userData['isOnline'] ?? false,
+        'lastSeen': userData['lastSeen'],
+      };
     } catch (e) {
-      print('Error getting user online status: $e');
-      return false;
+      print('Error getting user status: $e');
+      return {
+        'isOnline': false,
+        'lastSeen': null,
+      };
     }
   }
 }

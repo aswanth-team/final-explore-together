@@ -643,22 +643,20 @@ class HomePageState extends State<HomePage> {
                           color: appTheme.secondaryTextColor, fontSize: 16),
                       prefixIcon: Icon(Icons.search,
                           color: appTheme.secondaryTextColor),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(Icons.clear,
-                                  color: appTheme.secondaryTextColor),
-                              onPressed: () {
-                                setState(() {
-                                  _removeOverlay();
-                                  _isSearching = false;
-                                  _searchController.clear();
-                                  _searchQuery = "";
-                                  isSearchTriggered = false;
-                                  _fetchPosts();
-                                });
-                              },
-                            )
-                          : null,
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.clear,
+                            color: appTheme.secondaryTextColor),
+                        onPressed: () {
+                          setState(() {
+                            _removeOverlay();
+                            _isSearching = false;
+                            _searchController.clear();
+                            _searchQuery = "";
+                            isSearchTriggered = false;
+                            _fetchPosts();
+                          });
+                        },
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 6, horizontal: 16),
                       border: OutlineInputBorder(
@@ -679,7 +677,7 @@ class HomePageState extends State<HomePage> {
                     ),
                     style: TextStyle(color: appTheme.textColor),
                   )
-                : Text(""),
+                : Text("Explore"),
           ),
           actions: [
             if (!_isSearching)

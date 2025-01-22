@@ -39,7 +39,8 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   static const int _messagesPerPage = 20;
   DocumentSnapshot? _lastDocument;
   bool _hasMoreMessages = true;
-  
+  Timestamp? lastSeen;
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +49,7 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _setupScrollListener();
     _checkConnectivity();
     _markMessagesAsSeen();
+    _setupUserStatusListener();
   }
 
   Future<void> _markMessagesAsSeen() async {
@@ -124,6 +126,43 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     });
   }
 
+  void _setupUserStatusListener() {
+    FirebaseFirestore.instance
+        .collection('user')
+        .doc(widget.chatUserId)
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted && snapshot.exists) {
+        final userData = snapshot.data() as Map<String, dynamic>;
+        setState(() {
+          isUserOnline = userData['isOnline'] ?? false;
+          lastSeen = userData['lastSeen'] as Timestamp?;
+        });
+      }
+    });
+  }
+
+  String _getLastSeenText() {
+    if (isUserOnline) return 'Online';
+    if (lastSeen == null) return 'Offline';
+
+    final now = DateTime.now();
+    final lastSeenDate = lastSeen!.toDate();
+    final difference = now.difference(lastSeenDate);
+
+    if (difference.inMinutes < 1) {
+      return 'Last seen just now';
+    } else if (difference.inHours < 1) {
+      return 'Last seen ${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return 'Last seen ${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return 'Last seen ${difference.inDays}d ago';
+    } else {
+      return 'Last seen on ${lastSeenDate.day}/${lastSeenDate.month}/${lastSeenDate.year}';
+    }
+  }
+
   Future<void> _initializeChat() async {
     try {
       final cachedMessages = await _loadMessagesFromCache();
@@ -131,28 +170,19 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _messagesController.add(cachedMessages);
       }
 
-      if (!isOffline) {
-        final userFuture = FirebaseFirestore.instance
-            .collection('user')
-            .doc(widget.chatUserId)
-            .get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('user')
+          .doc(widget.chatUserId)
+          .get();
 
-        final onlineStatusFuture =
-            UserStatusManager.getUserOnlineStatus(widget.chatUserId);
-
-        final results = await Future.wait([
-          userFuture,
-          onlineStatusFuture,
-        ]);
-        if (mounted) {
-          setState(() {
-            userDetails = (results[0] as DocumentSnapshot).data()
-                as Map<String, dynamic>?;
-            isUserOnline = results[1] as bool;
-          });
-        }
-        _setupMessageListener();
+      // Check if the widget is still mounted
+      if (mounted) {
+        setState(() {
+          userDetails = userDoc.data();
+        });
       }
+      _setupMessageListener();
+
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -375,7 +405,7 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 Row(
                   children: [
                     Text(
-                      isUserOnline ? 'Online' : 'Offline',
+                      isUserOnline ? 'Online' : _getLastSeenText(),
                       style: TextStyle(
                         fontSize: 12,
                         color: isUserOnline

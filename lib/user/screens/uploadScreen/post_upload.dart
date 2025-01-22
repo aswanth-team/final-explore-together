@@ -289,6 +289,7 @@ class PostUploaderState extends State<PostUploader> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    SizedBox(height: 70),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: _imagePickerWidget(),
@@ -467,6 +468,7 @@ class PostUploaderState extends State<PostUploader> {
                         ),
                       ),
                     ),
+                    SizedBox(height: 80),
                   ],
                 ),
               ),

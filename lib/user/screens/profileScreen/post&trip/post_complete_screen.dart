@@ -293,7 +293,7 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'Post_complete',
         onPressed: isLoading ? null : _onComplete,
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.blue,
         icon: const Icon(Icons.check, color: Colors.white),
         label: const Text('Complete', style: TextStyle(color: Colors.white)),
       ),
