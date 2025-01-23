@@ -274,19 +274,19 @@ class SettingsPage extends StatelessWidget {
                     // Clear group chat data
                     final prefs = await SharedPreferences.getInstance();
                     final keys = prefs.getKeys().toList();
-
                     for (final key in keys) {
                       if (key.startsWith('cached_messages_') ||
                           key.startsWith('cached_chats') ||
                           key.startsWith('chat_') ||
                           key.startsWith('group_') ||
                           key.startsWith('messages_') ||
+                          key.startsWith('previous_chats') ||
                           key == 'groups') {
                         await prefs.remove(key);
                       }
                     }
 
-                    // Clear image caches
+                    // Clear image caches previous_chats
                     await OptimizedNetworkImage.clearImageCache();
                     imageCache.clear();
                     imageCache.clearLiveImages();

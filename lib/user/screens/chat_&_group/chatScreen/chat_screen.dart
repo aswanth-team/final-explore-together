@@ -209,7 +209,7 @@ class ChatHomeScreenState extends State<ChatHomeScreen>
             trailing: (chat['unseenCount'] > 0)
                 ? Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.green,
                       borderRadius: BorderRadius.circular(12),
@@ -218,7 +218,7 @@ class ChatHomeScreenState extends State<ChatHomeScreen>
                       '${chat['unseenCount']}',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

@@ -278,7 +278,7 @@ class PackageUploaderState extends State<PackageUploader> {
           color: appTheme.textColor,
         ),
         title: Text(
-          'Upload Agency',
+          'Upload Package',
           style: TextStyle(
             color: appTheme.textColor,
           ),

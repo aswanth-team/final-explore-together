@@ -106,7 +106,7 @@ class FeedbackTile extends StatelessWidget {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text('Close'),
+              child: const Text('Close', style: TextStyle(color: Colors.blue)),
             ),
           ],
         );

@@ -21,6 +21,7 @@ class Group {
   final DateTime createdAt;
   final String imageUrl;
   final Map<String, int> unreadMessages;
+  final DateTime? lastMessageTimestamp;
 
   Group({
     required this.id,
@@ -32,6 +33,7 @@ class Group {
     this.imageUrl =
         'https://res.cloudinary.com/dakew8wni/image/upload/v1735062043/pngtree-group-icon-png-image_1796653_foxnfp.jpg',
     this.unreadMessages = const {},
+    this.lastMessageTimestamp,
   });
 
   Map<String, dynamic> toMap() {
@@ -43,7 +45,8 @@ class Group {
       'memberIds': memberIds,
       'createdAt': createdAt.toIso8601String(),
       'imageUrl': imageUrl,
-      'unreadMessages': unreadMessages
+      'unreadMessages': unreadMessages,
+      'lastMessageTimestamp': lastMessageTimestamp?.toIso8601String(),
     };
   }
 
@@ -58,6 +61,9 @@ class Group {
       imageUrl: map['imageUrl'] ??
           'https://res.cloudinary.com/dakew8wni/image/upload/v1735062043/pngtree-group-icon-png-image_1796653_foxnfp.jpg',
       unreadMessages: Map<String, int>.from(map['unreadMessages'] ?? {}),
+      lastMessageTimestamp: map['lastMessageTimestamp'] != null
+          ? DateTime.parse(map['lastMessageTimestamp'])
+          : null,
     );
   }
 }
@@ -144,16 +150,10 @@ class FirebaseService {
         // Update cache
         await _cacheGroups(groups);
 
-        // Get latest message for each group
+        // Get latest message timestamp for each group
         final groupsWithTimestamp = await Future.wait(
           groups.map((group) async {
-            final cachedTimestamp =
-                await _getCachedLatestMessageTimestamp(group.id);
-            if (cachedTimestamp != null) {
-              return MapEntry(group, cachedTimestamp);
-            }
-
-            final latestMessage = await _firestore
+            final latestMessageSnapshot = await _firestore
                 .collection('groups')
                 .doc(group.id)
                 .collection('messages')
@@ -161,17 +161,15 @@ class FirebaseService {
                 .limit(1)
                 .get();
 
-            final timestamp = latestMessage.docs.isEmpty
-                ? group.createdAt
-                : DateTime.parse(latestMessage.docs.first['timestamp']);
-
-            // Cache the timestamp
-            await _cacheLatestMessageTimestamp(group.id, timestamp);
+            final timestamp = latestMessageSnapshot.docs.isNotEmpty
+                ? DateTime.parse(latestMessageSnapshot.docs.first['timestamp'])
+                : group.createdAt;
 
             return MapEntry(group, timestamp);
           }),
         );
 
+        // Sort groups by latest message timestamp
         groupsWithTimestamp.sort((a, b) => b.value.compareTo(a.value));
         yield groupsWithTimestamp.map((e) => e.key).toList();
       }
@@ -205,33 +203,26 @@ class FirebaseService {
     }
   }
 
-  Future<DateTime?> _getCachedLatestMessageTimestamp(String groupId) async {
-    try {
-      final timestamp = _prefs.getString('latest_message_timestamp_$groupId');
-      return timestamp != null ? DateTime.parse(timestamp) : null;
-    } catch (e) {
-      print('Error reading cached timestamp: $e');
-      return null;
-    }
-  }
-
-  Future<void> _cacheLatestMessageTimestamp(
-      String groupId, DateTime timestamp) async {
-    try {
-      await _prefs.setString(
-          'latest_message_timestamp_$groupId', timestamp.toIso8601String());
-    } catch (e) {
-      print('Error caching timestamp: $e');
-    }
-  }
-
   Future<void> sendMessage(Message message) async {
-    await _firestore
+    // Start a batch write
+    final batch = _firestore.batch();
+
+    // Add the message
+    final messageRef = _firestore
         .collection('groups')
         .doc(message.groupId)
         .collection('messages')
-        .doc(message.id)
-        .set(message.toMap());
+        .doc(message.id);
+    batch.set(messageRef, message.toMap());
+
+    // Update the group's lastMessageTimestamp
+    final groupRef = _firestore.collection('groups').doc(message.groupId);
+    batch.update(groupRef, {
+      'lastMessageTimestamp': message.timestamp.toIso8601String(),
+    });
+
+    // Commit the batch
+    await batch.commit();
     await _saveMessageLocally(message);
   }
 
@@ -1078,8 +1069,8 @@ class GroupChatScreenState extends State<GroupChatScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              widget.group.name.length > 12
-                  ? '${widget.group.name.substring(0, 18)}...'
+              widget.group.name.length > 18
+                  ? '${widget.group.name.substring(0, 16)}...'
                   : widget.group.name,
               style: const TextStyle(fontSize: 20),
             ),

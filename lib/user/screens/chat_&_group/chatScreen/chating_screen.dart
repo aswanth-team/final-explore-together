@@ -73,17 +73,15 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _checkConnectivity() async {
-    if (!mounted) return; // Add early return if widget is not mounted
+    if (!mounted) return; 
 
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {});
       if (mounted) {
-        // Check if mounted before calling setState
         setState(() => isOffline = false);
       }
     } catch (e) {
       if (mounted) {
-        // Check if mounted before calling setState
         setState(() => isOffline = true);
       }
     }
@@ -328,8 +326,7 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final currentMessages = _messagesController.value;
     final updatedMessages = [newMessage, ...currentMessages];
     _messagesController.add(updatedMessages);
-
-    // Save to cache
+    
     await _saveMessagesToCache(updatedMessages);
 
     if (!isOffline) {
@@ -430,11 +427,10 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     child: StreamBuilder<List<Map<String, dynamic>>>(
                       stream: _messagesController.stream,
                       builder: (context, snapshot) {
-                        if (!snapshot.hasData && isLoading) {
-                          return const Center(
-                              child: CircularProgressIndicator());
+                        if (!snapshot.hasData) {
+                          return const SizedBox.shrink();
                         }
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        if (snapshot.data!.isEmpty) {
                           return Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -470,17 +466,8 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         return ListView.builder(
                           controller: _scrollController,
                           reverse: true,
-                          itemCount:
-                              messages.length + (_hasMoreMessages ? 1 : 0),
+                          itemCount: messages.length,
                           itemBuilder: (context, index) {
-                            if (_hasMoreMessages && index == messages.length) {
-                              return const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child:
-                                    Center(child: CircularProgressIndicator()),
-                              );
-                            }
-
                             final message = messages[index];
                             final DateTime messageDate =
                                 (message['createdAt'] as Timestamp).toDate();
@@ -511,6 +498,7 @@ class ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       },
                     ),
                   ),
+                  const Divider(height: 1),
                   const Divider(height: 1),
                   Container(
                     color: appTheme.secondaryColor,
