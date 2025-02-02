@@ -4,22 +4,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../utils/app_colors.dart';
-import '../../../utils/app_theme.dart';
-import '../../../utils/loading.dart';
-import '../userDetailsScreen/others_user_profile.dart';
-import '../user_screen.dart';
+import '../../../../../utils/app_colors.dart';
+import '../../../../../utils/app_theme.dart';
+import '../../../../../utils/loading.dart';
+import '../user_profile_view_screen.dart';
 
-class BuddyingUserPage extends StatefulWidget {
+class BuddyingUserPageForAdmin extends StatefulWidget {
   final String userId;
 
-  const BuddyingUserPage({super.key, required this.userId});
+  const BuddyingUserPageForAdmin({super.key, required this.userId});
 
   @override
-  BuddyingUserPageState createState() => BuddyingUserPageState();
+  BuddyingUserPageForAdminState createState() =>
+      BuddyingUserPageForAdminState();
 }
 
-class BuddyingUserPageState extends State<BuddyingUserPage> {
+class BuddyingUserPageForAdminState extends State<BuddyingUserPageForAdmin> {
   TextEditingController searchController = TextEditingController();
   List<Map<String, dynamic>> allBuddingUsers = [];
   List<Map<String, dynamic>> filteredBuddyingUsers = [];
@@ -163,23 +163,14 @@ class BuddyingUserPageState extends State<BuddyingUserPage> {
                               final user = filteredBuddyingUsers[index];
                               return GestureDetector(
                                 onTap: () {
-                                  if (user['userId'] != currentUserId) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => OtherProfilePage(
-                                            userId: user['userId']),
-                                      ),
-                                    );
-                                  } else {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const UserScreen(initialIndex: 4),
-                                      ),
-                                    );
-                                  }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          OtherProfilePageForAdmin(
+                                              userId: user['userId']),
+                                    ),
+                                  );
                                 },
                                 child: Card(
                                   margin: EdgeInsets.zero,

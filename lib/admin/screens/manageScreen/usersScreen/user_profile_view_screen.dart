@@ -5,8 +5,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../services/one_signal.dart';
-import '../../../../user/screens/BuddyScreen/buddies_screen.dart';
-import '../../../../user/screens/BuddyScreen/buddying_screen.dart';
 import '../../../../user/screens/profileScreen/post&trip/current_user_tripimage.dart';
 import '../../../../utils/app_colors.dart';
 import '../../../../utils/app_theme.dart';
@@ -14,6 +12,8 @@ import '../../../../utils/counder.dart';
 import '../../../../utils/dialogues.dart';
 import '../../../../utils/loading.dart';
 import '../../messageScreen/sent_message_screen.dart';
+import 'BuddyScreen/buddies_screen_for_admin.dart';
+import 'BuddyScreen/buddying_screen_for_admin.dart';
 import 'adminViewPost&trip/user_posts.dart';
 
 class OtherProfilePageForAdmin extends StatefulWidget {
@@ -149,8 +149,6 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
           'Profile..',
           style: TextStyle(color: appTheme.textColor),
         ),
-  
-        
         iconTheme: IconThemeData(
           color: appTheme.textColor,
         ),
@@ -256,8 +254,9 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => BuddiesPage(
-                                              userId: widget.userId),
+                                          builder: (context) =>
+                                              BuddiesPageForAdmin(
+                                                  userId: widget.userId),
                                         ),
                                       );
                                     },
@@ -294,7 +293,7 @@ class OtherProfilePageStateForAdmin extends State<OtherProfilePageForAdmin> {
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
-                                              BuddyingUserPage(
+                                              BuddyingUserPageForAdmin(
                                                   userId: widget.userId),
                                         ),
                                       );

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -20,6 +22,7 @@ class PackagesScreen extends StatefulWidget {
 class PackagesScreenState extends State<PackagesScreen> {
   TextEditingController searchController = TextEditingController();
   String _searchQuery = '';
+  String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool isSearchTriggered = false;
   bool isOffline = false;
   List<String> suggestions = [];
@@ -43,6 +46,26 @@ class PackagesScreenState extends State<PackagesScreen> {
       });
     } catch (e) {
       print('Error fetching comment count: $e');
+    }
+  }
+
+  Future<void> _saveSearchAsInterest(String searchQuery) async {
+    try {
+      final userRef =
+          FirebaseFirestore.instance.collection('user').doc(currentUserId);
+
+      final currentUserDoc = await userRef.get();
+      final List<dynamic> currentInterests =
+          (currentUserDoc.data()?['interest'] as List?)?.cast<String>() ?? [];
+
+      if (currentInterests.length >= 30) {
+        currentInterests.removeAt(0);
+      }
+
+      currentInterests.add(searchQuery);
+      await userRef.update({'interest': currentInterests});
+    } catch (e) {
+      print('Error saving search as interest: $e');
     }
   }
 
@@ -113,25 +136,118 @@ class PackagesScreenState extends State<PackagesScreen> {
 
     setState(() {
       isLoading = true;
+      packages.clear();
     });
 
     try {
+      final currentUserDoc = await FirebaseFirestore.instance
+          .collection('user')
+          .doc(currentUserId)
+          .get();
+
+      final List<dynamic> userInterests =
+          (currentUserDoc.data()?['interest'] as List?)?.cast<String>() ?? [];
+
       final querySnapshot =
           await FirebaseFirestore.instance.collection('packages').get();
-      setState(() {
-        packages = querySnapshot.docs;
-        packages.shuffle();
+
+      List<Map<String, dynamic>> scoredPackages = querySnapshot.docs.map((doc) {
+        final package = doc.data();
+        int score = 0;
+
+        final locationName =
+            (package['locationName'] as String?)?.toLowerCase() ?? '';
+        final planToVisitPlaces = (package['planToVisitPlaces'] as List?)
+                ?.map((place) => place.toString().toLowerCase())
+                .toList() ??
+            [];
+
+        final searchFields = [locationName, ...planToVisitPlaces];
+
+        for (int i = 0; i < userInterests.length; i++) {
+          final interest = userInterests[i].toString().toLowerCase();
+          final matchScore =
+              searchFields.any((field) => field.contains(interest))
+                  ? (userInterests.length - i) * 10
+                  : 0;
+          score += matchScore;
+        }
+
+        return {
+          'doc': doc,
+          'score': score,
+          'randomTiebreaker': Random().nextDouble()
+        };
+      }).toList();
+
+      scoredPackages.sort((a, b) {
+        int scoreComparison = b['score'].compareTo(a['score']);
+        return scoreComparison != 0
+            ? scoreComparison
+            : b['randomTiebreaker'].compareTo(a['randomTiebreaker']);
       });
-      for (var doc in packages) {
+
+      final List<QueryDocumentSnapshot> prioritizedPackages = scoredPackages
+          .where((item) => item['score'] > 0)
+          .map((item) => item['doc'] as QueryDocumentSnapshot)
+          .toList();
+
+      final List<QueryDocumentSnapshot> nonPrioritizedPackages = scoredPackages
+          .where((item) => item['score'] == 0)
+          .map((item) => item['doc'] as QueryDocumentSnapshot)
+          .toList();
+
+      nonPrioritizedPackages.shuffle();
+      prioritizedPackages.shuffle();
+
+      final List<QueryDocumentSnapshot> combinedPackages = [];
+      int nonPrioritizedIndex = 0;
+
+      for (int i = 0; i < prioritizedPackages.length; i++) {
+        combinedPackages.add(prioritizedPackages[i]);
+
+        if ((i + 1) % 2 == 0 &&
+            nonPrioritizedIndex < nonPrioritizedPackages.length) {
+          combinedPackages.add(nonPrioritizedPackages[nonPrioritizedIndex]);
+          nonPrioritizedIndex++;
+        }
+      }
+
+      while (nonPrioritizedIndex < nonPrioritizedPackages.length) {
+        combinedPackages.add(nonPrioritizedPackages[nonPrioritizedIndex]);
+        nonPrioritizedIndex++;
+      }
+
+      List<QueryDocumentSnapshot> limitedPackages =
+          combinedPackages.take(50).toList();
+
+      if (limitedPackages.length < 50) {
+        final additionalPackagesQuery = await FirebaseFirestore.instance
+            .collection('packages')
+            .limit(50 - limitedPackages.length)
+            .get();
+
+        limitedPackages.addAll(additionalPackagesQuery.docs);
+      }
+
+      for (var doc in limitedPackages) {
         final packageId = doc.id;
         _fetchCommentCounts(packageId);
       }
+
+      if (mounted) {
+        setState(() {
+          packages = limitedPackages;
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      print('Error fetching packages: $e');
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
+      print('Error fetching interest-based packages: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -170,18 +286,23 @@ class PackagesScreenState extends State<PackagesScreen> {
           onChanged: isOffline
               ? null
               : (value) {
-                  setState(() {
-                    _searchQuery = value;
-                    isSearchTriggered = false;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _searchQuery = value;
+                      isSearchTriggered = false;
+                    });
+                  }
                 },
           onSubmitted: isOffline
               ? null
-              : (value) {
-                  setState(() {
-                    _searchQuery = value;
-                    isSearchTriggered = true;
-                  });
+              : (value) async {
+                  if (mounted) {
+                    setState(() {
+                      _searchQuery = value;
+                      isSearchTriggered = true;
+                    });
+                  }
+                  await _saveSearchAsInterest(_searchQuery);
                 },
           decoration: InputDecoration(
             filled: true,

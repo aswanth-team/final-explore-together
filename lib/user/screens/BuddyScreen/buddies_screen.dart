@@ -2,8 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../utils/app_colors.dart';
+import '../../../utils/app_theme.dart';
 import '../../../utils/loading.dart';
 import '../userDetailsScreen/others_user_profile.dart';
 import '../user_screen.dart';
@@ -86,50 +88,57 @@ class BuddiesPageState extends State<BuddiesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final appTheme = themeManager.currentTheme;
     return Scaffold(
+      backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
-          toolbarHeight: kToolbarHeight + 10.0,
-          title: TextField(
-            controller: searchController,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              hintText: 'Search by username...',
-              hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
-              prefixIcon: Icon(
-                Icons.search,
-                color: Colors.grey[600],
-              ),
-              suffixIcon: searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(
-                        Icons.clear,
-                        color: Colors.grey[600],
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          searchController.clear();
-                          filterUsers();
-                        });
-                      },
-                    )
-                  : null,
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.blue, width: 2),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.blue, width: 2),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Colors.grey, width: 1),
-              ),
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
+        backgroundColor: appTheme.secondaryColor,
+        toolbarHeight: kToolbarHeight + 10.0,
+        title: TextField(
+          controller: searchController,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: appTheme.primaryColor,
+            hintText: 'Search by username...',
+            hintStyle:
+                TextStyle(color: appTheme.secondaryTextColor, fontSize: 16),
+            prefixIcon: Icon(Icons.search, color: appTheme.secondaryTextColor),
+            suffixIcon: searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons.clear,
+                      color: appTheme.secondaryTextColor,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        searchController.clear();
+                        filterUsers();
+                      });
+                    },
+                  )
+                : null,
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
             ),
-          )),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide(color: appTheme.textColor, width: 0.5),
+            ),
+          ),
+          style: TextStyle(color: appTheme.textColor),
+        ),
+      ),
       body: isLoading
           ? const Center(
               child: LoadingAnimation(),
@@ -178,8 +187,8 @@ class BuddiesPageState extends State<BuddiesPage> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Container(
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
+                                    decoration: BoxDecoration(
+                                      color: appTheme.secondaryColor,
                                     ),
                                     child: Row(
                                       children: [
@@ -206,17 +215,17 @@ class BuddiesPageState extends State<BuddiesPage> {
                                         Expanded(
                                           child: Text(
                                             user['username'],
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: appTheme.textColor),
                                           ),
                                         ),
-                                        const Padding(
+                                        Padding(
                                           padding: EdgeInsets.only(right: 15.0),
                                           child: Icon(
                                             Icons.search,
-                                            color: Colors.grey,
+                                            color: appTheme.secondaryTextColor,
                                           ),
                                         ),
                                       ],

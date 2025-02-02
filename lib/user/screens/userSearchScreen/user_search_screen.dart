@@ -122,87 +122,92 @@ class SearchPageState extends State<SearchPage> {
           ? const Center(
               child: LoadingAnimation(),
             )
-          : Column(
-              children: [
-                Expanded(
-                  child: filteredUsers.isEmpty
-                      ? const Center(child: Text("No users found"))
-                      : ListView.builder(
-                          padding: EdgeInsets.zero,
-                          itemCount: filteredUsers.length,
-                          itemBuilder: (context, index) {
-                            final user = filteredUsers[index];
-                            return GestureDetector(
-                              onTap: () {
-                                if (user['userId'] != currentUserId) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => OtherProfilePage(
-                                          userId: user['userId']),
-                                    ),
-                                  );
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const UserScreen(initialIndex: 4),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Container(
-                                color: appTheme.primaryColor,
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 1, horizontal: 0),
-                                child: Row(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(10.0),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: AppColors.genderBorderColor(
-                                                user['userGender']),
-                                            width: 2.0,
+          : RefreshIndicator(
+              onRefresh:
+                  fetchUsers, // Trigger the fetchUsers function on refresh
+              child: Column(
+                children: [
+                  Expanded(
+                    child: filteredUsers.isEmpty
+                        ? const Center(child: Text("No users found"))
+                        : ListView.builder(
+                            padding: EdgeInsets.zero,
+                            itemCount: filteredUsers.length,
+                            itemBuilder: (context, index) {
+                              final user = filteredUsers[index];
+                              return GestureDetector(
+                                onTap: () {
+                                  if (user['userId'] != currentUserId) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => OtherProfilePage(
+                                            userId: user['userId']),
+                                      ),
+                                    );
+                                  } else {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const UserScreen(initialIndex: 4),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  color: appTheme.primaryColor,
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 1, horizontal: 0),
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(10.0),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color:
+                                                  AppColors.genderBorderColor(
+                                                      user['userGender']),
+                                              width: 2.0,
+                                            ),
+                                          ),
+                                          child: CircleAvatar(
+                                            backgroundImage:
+                                                CachedNetworkImageProvider(
+                                                    user['userImage']),
+                                            radius: 15,
                                           ),
                                         ),
-                                        child: CircleAvatar(
-                                          backgroundImage:
-                                              CachedNetworkImageProvider(
-                                                  user['userImage']),
-                                          radius: 15,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          user['userName'],
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: appTheme.textColor,
+                                          ),
+                                          overflow: TextOverflow
+                                              .ellipsis, // Add this line
                                         ),
                                       ),
-                                    ),
-                                    SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        user['userName'],
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: appTheme.textColor,
-                                        ),
-                                        overflow: TextOverflow
-                                            .ellipsis, // Add this line
+                                      Padding(
+                                        padding: EdgeInsets.only(right: 10.0),
+                                        child: Icon(Icons.search,
+                                            color: appTheme.secondaryTextColor),
                                       ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.only(right: 10.0),
-                                      child: Icon(Icons.search,
-                                          color: appTheme.secondaryTextColor),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
     );
   }

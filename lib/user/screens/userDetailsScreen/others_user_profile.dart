@@ -9,9 +9,9 @@ import '../../../utils/app_colors.dart';
 import '../../../utils/app_theme.dart';
 import '../../../utils/counder.dart';
 import '../../../utils/loading.dart';
+import '../BuddyScreen/buddies_screen.dart';
 import '../BuddyScreen/buddying_screen.dart';
 import '../chat_&_group/chatScreen/chating_screen.dart';
-import '../BuddyScreen/buddies_screen.dart';
 import 'post&trip/post&trip/other_user_posts.dart';
 import 'post&trip/post&trip/other_user_tripimage.dart';
 import 'report_screen.dart';
@@ -183,6 +183,9 @@ class OtherProfilePageState extends State<OtherProfilePage> {
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
         backgroundColor: appTheme.secondaryColor,
         title: Text(
           'Profile..',

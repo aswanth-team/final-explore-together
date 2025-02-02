@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -77,7 +78,7 @@ class HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     fetchSuggestions();
-    _fetchPosts();
+    _fetchPostsWithInterestPriority();
   }
 
   Future<void> toggleLike(String postId) async {
@@ -167,12 +168,13 @@ class HomePageState extends State<HomePage> {
     return Container(
       color: highlightColor,
       child: InkWell(
-        onTap: () {
+        onTap: () async {
           setState(() {
             _searchController.text = suggestion;
             _searchQuery = suggestion;
             isSearchTriggered = true;
           });
+          await _saveSearchAsInterest(_searchQuery);
           _removeOverlay();
           _searchPosts();
         },
@@ -260,10 +262,153 @@ class HomePageState extends State<HomePage> {
 
     if (mounted) {
       setState(() {
-        // Get unique values while preserving original casing
         suggestions = suggestionMap.values.toList()
           ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       });
+    }
+  }
+
+  Future<void> _fetchPostsWithInterestPriority() async {
+    setState(() {
+      isLoading = true;
+      posts.clear();
+    });
+
+    try {
+      final currentUserDoc = await FirebaseFirestore.instance
+          .collection('user')
+          .doc(currentUserId)
+          .get();
+
+      final List<dynamic> userInterests =
+          (currentUserDoc.data()?['interest'] as List?)?.cast<String>() ?? [];
+      final List<dynamic> userBuddies =
+          (currentUserDoc.data()?['buddying'] as List?)?.cast<String>() ?? [];
+
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('post')
+          .where('userid', isNotEqualTo: currentUserId)
+          .get();
+
+      List<Map<String, dynamic>> scoredPosts = querySnapshot.docs.map((doc) {
+        final post = doc.data();
+        final userId = post['userid'] as String;
+        int score = 0;
+
+        final locationName =
+            (post['locationName'] as String?)?.toLowerCase() ?? '';
+        final visitedPlaces = (post['visitedPlaces'] as List?)
+                ?.map((place) => place.toString().toLowerCase())
+                .toList() ??
+            [];
+        final plannedPlaces = (post['planToVisitPlaces'] as List?)
+                ?.map((place) => place.toString().toLowerCase())
+                .toList() ??
+            [];
+
+        final searchFields = [locationName, ...visitedPlaces, ...plannedPlaces];
+
+        for (int i = 0; i < userInterests.length; i++) {
+          final interest = userInterests[i].toString().toLowerCase();
+          final matchScore =
+              searchFields.any((field) => field.contains(interest))
+                  ? (userInterests.length - i) * 10
+                  : 0;
+          score += matchScore;
+        }
+
+        if (userBuddies.contains(userId)) {
+          score += 100;
+        }
+
+        return {
+          'doc': doc,
+          'score': score,
+          'randomTiebreaker': Random().nextDouble()
+        };
+      }).toList();
+      scoredPosts.sort((a, b) {
+        int scoreComparison = b['score'].compareTo(a['score']);
+        return scoreComparison != 0
+            ? scoreComparison
+            : b['randomTiebreaker'].compareTo(a['randomTiebreaker']);
+      });
+
+      final List<DocumentSnapshot> prioritizedPosts = scoredPosts
+          .where((item) => item['score'] > 0)
+          .map((item) => item['doc'] as DocumentSnapshot)
+          .toList();
+
+      final List<DocumentSnapshot> nonPrioritizedPosts = scoredPosts
+          .where((item) => item['score'] == 0)
+          .map((item) => item['doc'] as DocumentSnapshot)
+          .toList();
+
+      nonPrioritizedPosts.shuffle();
+      prioritizedPosts.shuffle();
+
+      final List<DocumentSnapshot> combinedPosts = [];
+      int nonPrioritizedIndex = 0;
+
+      for (int i = 0; i < prioritizedPosts.length; i++) {
+        combinedPosts.add(prioritizedPosts[i]);
+
+        if ((i + 1) % 2 == 0 &&
+            nonPrioritizedIndex < nonPrioritizedPosts.length) {
+          combinedPosts.add(nonPrioritizedPosts[nonPrioritizedIndex]);
+          nonPrioritizedIndex++;
+        }
+      }
+
+      while (nonPrioritizedIndex < nonPrioritizedPosts.length) {
+        combinedPosts.add(nonPrioritizedPosts[nonPrioritizedIndex]);
+        nonPrioritizedIndex++;
+      }
+      List<DocumentSnapshot> limitedPosts = combinedPosts.take(50).toList();
+
+      if (limitedPosts.length < 50) {
+        final additionalPostsQuery = await FirebaseFirestore.instance
+            .collection('post')
+            .where('userid', isNotEqualTo: currentUserId)
+            .limit(50 - limitedPosts.length)
+            .get();
+
+        limitedPosts.addAll(additionalPostsQuery.docs);
+      }
+      await _fetchUsersForPosts(limitedPosts);
+
+      if (mounted) {
+        setState(() {
+          posts = limitedPosts;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching interest-based posts: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+        _fetchPosts();
+      }
+    }
+  }
+
+  Future<void> _saveSearchAsInterest(String searchQuery) async {
+    try {
+      final userRef =
+          FirebaseFirestore.instance.collection('user').doc(currentUserId);
+
+      final currentUserDoc = await userRef.get();
+      final List<dynamic> currentInterests =
+          (currentUserDoc.data()?['interest'] as List?)?.cast<String>() ?? [];
+      if (currentInterests.length >= 30) {
+        currentInterests.removeAt(0);
+      }
+      currentInterests.add(searchQuery);
+      await userRef.update({'interest': currentInterests});
+    } catch (e) {
+      print('Error saving search as interest: $e');
     }
   }
 
@@ -271,15 +416,12 @@ class HomePageState extends State<HomePage> {
     setState(() {
       isLoading = true;
     });
-
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('post')
           .where('userid', isNotEqualTo: currentUserId)
           .get();
-
       await _fetchUsersForPosts(querySnapshot.docs);
-
       if (mounted) {
         setState(() {
           posts = querySnapshot.docs;
@@ -331,10 +473,12 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<void> _searchPosts() async {
-    setState(() {
-      isLoading = true;
-      posts.clear();
-    });
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        posts.clear();
+      });
+    }
 
     try {
       final querySnapshot =
@@ -384,7 +528,7 @@ class HomePageState extends State<HomePage> {
     setState(() {
       posts.clear();
     });
-    await _fetchPosts();
+    await _fetchPostsWithInterestPriority();
   }
 
   @override
@@ -460,9 +604,11 @@ class HomePageState extends State<HomePage> {
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
-                        setState(() {
-                          selectedGender = newValue!;
-                        });
+                        if (mounted) {
+                          setState(() {
+                            selectedGender = newValue!;
+                          });
+                        }
                       },
                     ),
                   ),
@@ -548,10 +694,12 @@ class HomePageState extends State<HomePage> {
   }
 
   void _applyFilter() async {
-    setState(() {
-      isLoading = true;
-      posts.clear();
-    });
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        posts.clear();
+      });
+    }
 
     try {
       Query query = FirebaseFirestore.instance
@@ -577,27 +725,33 @@ class HomePageState extends State<HomePage> {
 
         return matchesGender && matchesCompletion;
       }).toList();
-
-      setState(() {
-        posts = filteredDocs;
-        isFilterActive = selectedGender != 'All' || selectedCompletion != 'All';
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          posts = filteredDocs;
+          isFilterActive =
+              selectedGender != 'All' || selectedCompletion != 'All';
+          isLoading = false;
+        });
+      }
     } catch (e) {
       print('Error applying filter: $e');
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   void _resetFilter() {
-    setState(() {
-      selectedGender = 'All';
-      selectedCompletion = 'All';
-      isFilterActive = false;
-    });
-    _fetchPosts();
+    if (mounted) {
+      setState(() {
+        selectedGender = 'All';
+        selectedCompletion = 'All';
+        isFilterActive = false;
+      });
+    }
+    _fetchPostsWithInterestPriority();
   }
 
   @override
@@ -627,11 +781,12 @@ class HomePageState extends State<HomePage> {
                         }
                       });
                     },
-                    onSubmitted: (value) {
+                    onSubmitted: (value) async {
                       setState(() {
                         _searchQuery = value;
                         isSearchTriggered = true;
                       });
+                      await _saveSearchAsInterest(_searchQuery);
                       _removeOverlay();
                       _searchPosts();
                     },
@@ -653,7 +808,7 @@ class HomePageState extends State<HomePage> {
                             _searchController.clear();
                             _searchQuery = "";
                             isSearchTriggered = false;
-                            _fetchPosts();
+                            _fetchPostsWithInterestPriority();
                           });
                         },
                       ),

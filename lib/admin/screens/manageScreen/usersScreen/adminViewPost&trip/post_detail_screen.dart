@@ -8,10 +8,10 @@ import '../../../../../services/user/user_services.dart';
 import '../../../../../utils/app_colors.dart';
 import '../../../../../utils/app_theme.dart';
 import '../../../../../utils/image_swipe.dart';
-import '../../../../../user/screens/userDetailsScreen/others_user_profile.dart';
 import '../../../../../utils/dialogues.dart';
 import '../../../../../utils/counder.dart';
 import '../../../../../utils/loading.dart';
+import '../user_profile_view_screen.dart';
 import 'admin_comment_view_screen.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -386,7 +386,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>
-                                                    OtherProfilePage(
+                                                    OtherProfilePageForAdmin(
                                                   userId: buddyUserId,
                                                 ),
                                               ),

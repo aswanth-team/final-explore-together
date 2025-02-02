@@ -147,6 +147,9 @@ class _OtherUserPostDetailScreenState extends State<OtherUserPostDetailScreen> {
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
         backgroundColor: appTheme.secondaryColor,
         title: Text(
           'Post Details',

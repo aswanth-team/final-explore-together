@@ -122,6 +122,9 @@ class _CurrentUserPostDetailScreenState
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: appTheme.textColor,
+        ),
         backgroundColor: appTheme.secondaryColor,
         title: Text(
           'Post Details',

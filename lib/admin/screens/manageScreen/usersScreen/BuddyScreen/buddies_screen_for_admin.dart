@@ -4,38 +4,37 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../utils/app_colors.dart';
-import '../../../utils/app_theme.dart';
-import '../../../utils/loading.dart';
-import '../userDetailsScreen/others_user_profile.dart';
-import '../user_screen.dart';
+import '../../../../../utils/app_colors.dart';
+import '../../../../../utils/app_theme.dart';
+import '../../../../../utils/loading.dart';
+import '../user_profile_view_screen.dart';
 
-class BuddyingUserPage extends StatefulWidget {
+class BuddiesPageForAdmin extends StatefulWidget {
   final String userId;
 
-  const BuddyingUserPage({super.key, required this.userId});
+  const BuddiesPageForAdmin({super.key, required this.userId});
 
   @override
-  BuddyingUserPageState createState() => BuddyingUserPageState();
+  BuddiesPageForAdminState createState() => BuddiesPageForAdminState();
 }
 
-class BuddyingUserPageState extends State<BuddyingUserPage> {
+class BuddiesPageForAdminState extends State<BuddiesPageForAdmin> {
   TextEditingController searchController = TextEditingController();
-  List<Map<String, dynamic>> allBuddingUsers = [];
-  List<Map<String, dynamic>> filteredBuddyingUsers = [];
+  List<Map<String, dynamic>> allBuddies = [];
+  List<Map<String, dynamic>> filteredBuddies = [];
   String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchBuddyingUsers();
+    fetchBuddies();
     searchController.addListener(() {
       filterUsers();
     });
   }
 
-  Future<void> fetchBuddyingUsers() async {
+  Future<void> fetchBuddies() async {
     setState(() {
       isLoading = true;
     });
@@ -45,25 +44,25 @@ class BuddyingUserPageState extends State<BuddyingUserPage> {
         .get();
 
     if (userDoc.exists) {
-      List<dynamic> buddyingUsersIds = userDoc['buddying'] ?? [];
-      List<Map<String, dynamic>> buddyingUsers = [];
-      for (String buddyingUsersId in buddyingUsersIds) {
+      List<dynamic> buddiesIds = userDoc['buddies'] ?? [];
+      List<Map<String, dynamic>> buddies = [];
+      for (String buddiesId in buddiesIds) {
         DocumentSnapshot followedUserDoc = await FirebaseFirestore.instance
             .collection('user')
-            .doc(buddyingUsersId)
+            .doc(buddiesId)
             .get();
 
         if (followedUserDoc.exists) {
-          var buddyingUserData = followedUserDoc.data() as Map<String, dynamic>;
-          buddyingUserData['userId'] = buddyingUsersId;
+          var buddiesData = followedUserDoc.data() as Map<String, dynamic>;
+          buddiesData['userId'] = buddiesId;
 
-          buddyingUsers.add(buddyingUserData);
+          buddies.add(buddiesData);
         }
       }
 
       setState(() {
-        allBuddingUsers = buddyingUsers;
-        filteredBuddyingUsers = buddyingUsers;
+        allBuddies = buddies;
+        filteredBuddies = buddies;
         isLoading = false;
       });
     }
@@ -73,7 +72,7 @@ class BuddyingUserPageState extends State<BuddyingUserPage> {
     String query = searchController.text.toLowerCase();
 
     setState(() {
-      filteredBuddyingUsers = allBuddingUsers.where((user) {
+      filteredBuddies = allBuddies.where((user) {
         String username = user['username'].toLowerCase();
         return username.contains(query);
       }).toList();
@@ -90,7 +89,6 @@ class BuddyingUserPageState extends State<BuddyingUserPage> {
   Widget build(BuildContext context) {
     final themeManager = Provider.of<ThemeManager>(context);
     final appTheme = themeManager.currentTheme;
-
     return Scaffold(
       backgroundColor: appTheme.primaryColor,
       appBar: AppBar(
@@ -147,7 +145,7 @@ class BuddyingUserPageState extends State<BuddyingUserPage> {
           : Column(
               children: [
                 Expanded(
-                    child: filteredBuddyingUsers.isEmpty
+                    child: filteredBuddies.isEmpty
                         ? const Center(child: Text('No following users found.'))
                         : GridView.builder(
                             padding: EdgeInsets.zero,
@@ -158,28 +156,19 @@ class BuddyingUserPageState extends State<BuddyingUserPage> {
                               mainAxisSpacing: 0.0,
                               crossAxisSpacing: 0.0,
                             ),
-                            itemCount: filteredBuddyingUsers.length,
+                            itemCount: filteredBuddies.length,
                             itemBuilder: (context, index) {
-                              final user = filteredBuddyingUsers[index];
+                              final user = filteredBuddies[index];
                               return GestureDetector(
                                 onTap: () {
-                                  if (user['userId'] != currentUserId) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => OtherProfilePage(
-                                            userId: user['userId']),
-                                      ),
-                                    );
-                                  } else {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const UserScreen(initialIndex: 4),
-                                      ),
-                                    );
-                                  }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          OtherProfilePageForAdmin(
+                                              userId: user['userId']),
+                                    ),
+                                  );
                                 },
                                 child: Card(
                                   margin: EdgeInsets.zero,

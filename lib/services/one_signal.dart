@@ -125,33 +125,3 @@ class NotificationService {
     }
   }
 }
-
-/* Future<void> sentNotification(String title, String description) async {
-    try {
-      var response = await http.post(
-        Uri.parse(url),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Basic ${ApiKeys.oneSignalId}",
-        },
-        body: jsonEncode({
-          "app_id": ApiKeys.appId,
-          "contents": {
-            "en": description,
-          },
-          "headings": {
-            "en": title,
-          },
-          "included_segments": ["Total Subscriptions"],
-        }),
-      );
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        print("Notification sent successfully.");
-      } else {
-        print("Failed to send notification: ${response.body}");
-      }
-    } on Exception catch (e) {
-      print("Error sending notification: $e");
-    }
-  }*/

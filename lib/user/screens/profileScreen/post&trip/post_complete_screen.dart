@@ -172,6 +172,42 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
     }
   }
 
+  Future<void> _sendNotificationToBuddies(List<String> buddyIds) async {
+    final postDoc = await FirebaseFirestore.instance
+        .collection('post')
+        .doc(widget.postId)
+        .get();
+
+    if (!postDoc.exists) return;
+
+    final String postTitle = postDoc.data()?['title'] ?? 'A trip';
+    final batch = FirebaseFirestore.instance.batch();
+
+    for (String buddyId in buddyIds) {
+      if (buddyId == currentUserId) {
+        continue; 
+      }
+
+      final notificationRef = FirebaseFirestore.instance
+          .collection('user')
+          .doc(buddyId)
+          .collection('notifications')
+          .doc();
+
+      batch.set(notificationRef, {
+        'title': 'Trip Completed',
+        'message': '$postTitle has been marked as completed',
+        'time': FieldValue.serverTimestamp(),
+        'isSeen': false,
+        'date': DateTime.now().toIso8601String(),
+        'postId': widget.postId,
+        'postUserId': currentUserId,
+      });
+    }
+
+    await batch.commit();
+  }
+
   Future<void> _saveTripDetails() async {
     try {
       List<String> tripBuddiesIds = tripBuddies
@@ -180,11 +216,6 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
           })
           .where((id) => id.isNotEmpty)
           .toList();
-
-      if (isFromPackage && packageId != null) {
-        await _addComment(tripRating!.toInt());
-      }
-
       await FirebaseFirestore.instance
           .collection('post')
           .doc(widget.postId)
@@ -196,6 +227,12 @@ class PostCompleteScreenState extends State<PostCompleteScreen> {
         'visitedPlaces': visitedPlaces,
         'tripCompletedDuration': tripCompletedDuration,
       });
+
+      await _sendNotificationToBuddies(tripBuddiesIds);
+
+      if (isFromPackage && packageId != null) {
+        await _addComment(tripRating!.toInt());
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
