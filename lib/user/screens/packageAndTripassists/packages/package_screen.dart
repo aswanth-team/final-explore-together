@@ -151,7 +151,10 @@ class PackagesScreenState extends State<PackagesScreen> {
       final querySnapshot =
           await FirebaseFirestore.instance.collection('packages').get();
 
-      List<Map<String, dynamic>> scoredPackages = querySnapshot.docs.map((doc) {
+      Set<String> packageIds = {}; // To avoid duplicates
+      List<Map<String, dynamic>> scoredPackages = [];
+
+      for (var doc in querySnapshot.docs) {
         final package = doc.data();
         int score = 0;
 
@@ -173,12 +176,12 @@ class PackagesScreenState extends State<PackagesScreen> {
           score += matchScore;
         }
 
-        return {
+        scoredPackages.add({
           'doc': doc,
           'score': score,
           'randomTiebreaker': Random().nextDouble()
-        };
-      }).toList();
+        });
+      }
 
       scoredPackages.sort((a, b) {
         int scoreComparison = b['score'].compareTo(a['score']);
@@ -187,52 +190,72 @@ class PackagesScreenState extends State<PackagesScreen> {
             : b['randomTiebreaker'].compareTo(a['randomTiebreaker']);
       });
 
-      final List<QueryDocumentSnapshot> prioritizedPackages = scoredPackages
-          .where((item) => item['score'] > 0)
-          .map((item) => item['doc'] as QueryDocumentSnapshot)
-          .toList();
+      // Separate prioritized and non-prioritized packages
+      final List<QueryDocumentSnapshot> prioritizedPackages = [];
+      final List<QueryDocumentSnapshot> nonPrioritizedPackages = [];
 
-      final List<QueryDocumentSnapshot> nonPrioritizedPackages = scoredPackages
-          .where((item) => item['score'] == 0)
-          .map((item) => item['doc'] as QueryDocumentSnapshot)
-          .toList();
+      for (var item in scoredPackages) {
+        if (item['score'] > 0) {
+          prioritizedPackages.add(item['doc']);
+        } else {
+          nonPrioritizedPackages.add(item['doc']);
+        }
+      }
 
-      nonPrioritizedPackages.shuffle();
-      prioritizedPackages.shuffle();
-
-      final List<QueryDocumentSnapshot> combinedPackages = [];
+      List<QueryDocumentSnapshot> combinedPackages = [];
       int nonPrioritizedIndex = 0;
 
+      // Interleave prioritized and non-prioritized packages
       for (int i = 0; i < prioritizedPackages.length; i++) {
-        combinedPackages.add(prioritizedPackages[i]);
+        final package = prioritizedPackages[i];
+        if (!packageIds.contains(package.id)) {
+          combinedPackages.add(package);
+          packageIds.add(package.id);
+        }
 
         if ((i + 1) % 2 == 0 &&
             nonPrioritizedIndex < nonPrioritizedPackages.length) {
-          combinedPackages.add(nonPrioritizedPackages[nonPrioritizedIndex]);
+          final nonPrioritized = nonPrioritizedPackages[nonPrioritizedIndex];
+          if (!packageIds.contains(nonPrioritized.id)) {
+            combinedPackages.add(nonPrioritized);
+            packageIds.add(nonPrioritized.id);
+          }
           nonPrioritizedIndex++;
         }
       }
 
+      // Add remaining non-prioritized packages if needed
       while (nonPrioritizedIndex < nonPrioritizedPackages.length) {
-        combinedPackages.add(nonPrioritizedPackages[nonPrioritizedIndex]);
+        final package = nonPrioritizedPackages[nonPrioritizedIndex];
+        if (!packageIds.contains(package.id)) {
+          combinedPackages.add(package);
+          packageIds.add(package.id);
+        }
         nonPrioritizedIndex++;
       }
 
+      // Limit to 50 packages
       List<QueryDocumentSnapshot> limitedPackages =
           combinedPackages.take(50).toList();
 
+      // Fetch extra packages only if needed and avoid duplicates
       if (limitedPackages.length < 50) {
         final additionalPackagesQuery = await FirebaseFirestore.instance
             .collection('packages')
             .limit(50 - limitedPackages.length)
             .get();
 
-        limitedPackages.addAll(additionalPackagesQuery.docs);
+        for (var doc in additionalPackagesQuery.docs) {
+          if (!packageIds.contains(doc.id)) {
+            limitedPackages.add(doc);
+            packageIds.add(doc.id);
+          }
+        }
       }
 
+      // Fetch comment counts for each package
       for (var doc in limitedPackages) {
-        final packageId = doc.id;
-        _fetchCommentCounts(packageId);
+        _fetchCommentCounts(doc.id);
       }
 
       if (mounted) {
