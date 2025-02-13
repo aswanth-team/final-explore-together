@@ -15,33 +15,22 @@ const apiKey = 'AIzaSyAwjcN3Aei78CJ6YP2Ok-W47i-Z_5k_5EE';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   final themeManager = ThemeManager();
   await themeManager.loadTheme();
-
-
-  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // Configure Firestore settings
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
-
-  // Initialize OneSignal
   OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
   OneSignal.initialize('6ebc33e0-21f7-4380-867f-9a6c8c9220e9');
   OneSignal.Notifications.requestPermission(true);
-
-  // Initialize Gemini
   Gemini.init(apiKey: apiKey);
-
   Widget home;
-  final user = FirebaseAuth.instance.currentUser;
 
+  final user = FirebaseAuth.instance.currentUser;
   if (user != null) {
     final adminSnapshot = await FirebaseFirestore.instance
         .collection('admin')

@@ -105,13 +105,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Colors.lightBlueAccent, // Header background color
-              onPrimary: Colors.white, // Header text color
-              onSurface: Colors.black, // Body text color
+              primary: Colors.lightBlueAccent,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: Colors.lightBlueAccent, // Button text color
+                foregroundColor: Colors.lightBlueAccent,
               ),
             ),
           ),
@@ -484,11 +484,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             controller: usernameController,
             style: const TextStyle(color: Colors.white),
             decoration: _inputDecoration("Username", Icons.person),
+            inputFormatters: [
+              FilteringTextInputFormatter.deny(RegExp(r'[^a-zA-Z0-9_]')),
+            ],
+            onChanged: (value) {
+              String newValue = value.toLowerCase();
+              if (newValue != value) {
+                usernameController.value = TextEditingValue(
+                  text: newValue,
+                  selection: TextSelection.collapsed(offset: newValue.length),
+                );
+              }
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return "Please enter your username";
               }
-              return usernameError;
+              return null;
             },
           ),
         ),
